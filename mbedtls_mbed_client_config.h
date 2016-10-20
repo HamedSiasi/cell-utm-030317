@@ -102,10 +102,10 @@
 #define MBEDTLS_BASE64_C
 
 // reduce IO buffer to save RAM, default is 16KB
-#define MBEDTLS_SSL_MAX_CONTENT_LEN 2048
+#define MBEDTLS_SSL_MAX_CONTENT_LEN 512//2048
 
 // define to save 8KB RAM at the expense of ROM
-#undef MBEDTLS_AES_ROM_TABLES
+#define MBEDTLS_AES_ROM_TABLES
 
 // Save ROM and a few bytes of RAM by specifying our own ciphersuite list
 #define MBEDTLS_SSL_CIPHERSUITES MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256

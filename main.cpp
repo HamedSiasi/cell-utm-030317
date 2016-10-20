@@ -25,36 +25,18 @@
 #include "mbed.h"
 #include "rtos.h"
 
-#define ETHERNET        1
-#define WIFI            2
-#define MESH_LOWPAN_ND  3
-#define MESH_THREAD     4
 
-#define STRINGIFY(s) #s
 
-#if MBED_CONF_APP_NETWORK_INTERFACE == WIFI
-#include "ESP8266Interface.h"
-ESP8266Interface esp(MBED_CONF_APP_WIFI_TX, MBED_CONF_APP_WIFI_RX);
-#elif MBED_CONF_APP_NETWORK_INTERFACE == ETHERNET
 #include "EthernetInterface.h"
 EthernetInterface eth;
-#elif MBED_CONF_APP_NETWORK_INTERFACE == MESH_LOWPAN_ND
-#define MESH
-#include "NanostackInterface.h"
-LoWPANNDInterface mesh;
-#elif MBED_CONF_APP_NETWORK_INTERFACE == MESH_THREAD
-#define MESH
-#include "NanostackInterface.h"
-ThreadInterface mesh;
-#endif
 
-#ifndef MESH
+
+
+
 // This is address to mbed Device Connector
+//#define MBED_SERVER_ADDRESS "coaps://[2607:f0d0:2601:52::20]:5684"
 #define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
-#else
-// This is address to mbed Device Connector
-#define MBED_SERVER_ADDRESS "coaps://[2607:f0d0:2601:52::20]:5684"
-#endif
+
 
 Serial output(USBTX, USBRX);
 
@@ -70,17 +52,10 @@ struct MbedClientDevice device = {
 MbedClient mbed_client(device);
 
 
-// In case of K64F board , there is button resource available
-// to change resource value and unregister
-#ifdef TARGET_K64F
-// Set up Hardware interrupt button.
-InterruptIn obs_button(SW2);
-InterruptIn unreg_button(SW3);
-#else
 //In non K64F boards , set up a timer to simulate updating resource,
 // there is no functionality to unregister.
 Ticker timer;
-#endif
+
 
 // LED Output
 DigitalOut led1(LED1);
@@ -105,7 +80,7 @@ public:
         // set initial pattern (toggle every 200ms. 7 toggles in total)
         pattern_res->set_value((const uint8_t*)"500:500:500:500:500:500:500", 27);
 
-        // there's not really an execute LWM2M ID that matches... hmm...
+        // there's not really an execute LWM2M ID that matches...  hmm...
         M2MResource* led_res = led_inst->create_dynamic_resource("5850", "Blink",
             M2MResourceInstance::OPAQUE, false);
         // we allow executing a function here...
@@ -211,11 +186,7 @@ public:
 
         // up counter
         counter++;
-#ifdef TARGET_K64F
-        printf("handle_button_click, new value of counter is %d\r\n", counter);
-#else
-        printf("simulate button_click, new value of counter is %d\r\n", counter);
-#endif
+
         // serialize the value of counter as a string, and tell connector
         char buffer[20];
         int size = sprintf(buffer,"%d",counter);
@@ -256,6 +227,7 @@ void blinky() { status_led = !status_led; }
 
 // Entry point to the program
 int main() {
+	printf("start\r\n");
 
     unsigned int seed;
     size_t len;
@@ -274,9 +246,9 @@ int main() {
 
 #error "This hardware does not have entropy, endpoint will not register to Connector.\
 You need to enable NULL ENTROPY for your application, but if this configuration change is made then no security is offered by mbed TLS.\
-Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app.json macros to register your endpoint."
-
+Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and in mbed_app.json macros to register your endpoint."
 #endif
+
 
     srand(seed);
 
@@ -286,7 +258,7 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     mainThread = osThreadGetId();
 
     // Sets the console baud-rate
-    output.baud(115200);
+    output.baud(9600);
 
     output.printf("Starting mbed Client example...\r\n");
 
@@ -295,22 +267,10 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
 
     NetworkInterface *network_interface = 0;
     int connect_success = -1;
-#if MBED_CONF_APP_NETWORK_INTERFACE == WIFI
-    output.printf("\n\rUsing WiFi \r\n");
-    output.printf("\n\rConnecting to WiFi..\r\n");
-    connect_success = esp.connect(MBED_CONF_APP_WIFI_SSID, MBED_CONF_APP_WIFI_PASSWORD);
-    network_interface = &esp;
-#elif MBED_CONF_APP_NETWORK_INTERFACE == ETHERNET
     output.printf("Using Ethernet\r\n");
     connect_success = eth.connect();
     network_interface = &eth;
-#endif
-#ifdef MESH
-    output.printf("Using Mesh\r\n");
-    output.printf("\n\rConnecting to Mesh..\r\n");
-    connect_success = mesh.connect();
-    network_interface = &mesh;
-#endif
+
     if(connect_success == 0) {
     output.printf("\n\rConnected to Network successfully\r\n");
     } else {
@@ -324,25 +284,38 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
         output.printf("No IP address\r\n");
     }
 
+
+
+
+
     // we create our button and LED resources
     ButtonResource button_resource;
     LedResource led_resource;
 
-#ifdef TARGET_K64F
-    // On press of SW3 button on K64F board, example application
-    // will call unregister API towards mbed Device Connector
-    //unreg_button.fall(&mbed_client,&MbedClient::test_unregister);
-    unreg_button.fall(&unregister);
 
-    // Observation Button (SW2) press will send update of endpoint resource values to connector
-    obs_button.fall(&button_clicked);
-#else
     // Send update of endpoint resource values to connector every 15 seconds periodically
     timer.attach(&button_clicked, 15.0);
-#endif
+
+
+
+
+    //------------------------------------------------------------------------
 
     // Create endpoint interface to manage register and unregister
     mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
+
+    //------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 
     // Create Objects of varying types, see simpleclient.h for more details on implementation.
     M2MSecurity* register_object = mbed_client.create_register_object(); // server object specifying connector info
@@ -380,4 +353,30 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
 
     mbed_client.test_unregister();
     status_ticker.detach();
+
+
+
+
+/*
+
+    eth.connect();
+    const char *ip = eth.get_ip_address();
+    const char *mac = eth.get_mac_address();
+
+    printf("IP address is: %s\r\n", ip ? ip : "No IP");
+    printf("MAC address is: %s\r\n", mac ? mac : "No MAC");
+
+    eth.disconnect();
+    printf("Done\r\n");
+*/
+    //BlinkyLoop
+    while (true) {
+        led1 = !led1;
+        Thread::wait(500);
+    }
+
+
+
+
+
 }

@@ -28,11 +28,17 @@
 #include "security.h"
 #include "mbed.h"
 
+
+
 //Select binding mode: UDP or TCP
 M2MInterface::BindingMode SOCKET_MODE = M2MInterface::UDP;
 
+
+
 // MBED_DOMAIN and MBED_ENDPOINT_NAME come
 // from the security.h file copied from connector.mbed.com
+
+
 
 struct MbedClientDevice {
     const char* Manufacturer;
@@ -40,6 +46,8 @@ struct MbedClientDevice {
     const char* ModelNumber;
     const char* SerialNumber;
 };
+
+
 
 /*
 * Wrapper for mbed client stack that handles all callbacks, error handling, and
@@ -51,9 +59,16 @@ struct MbedClientDevice {
 * you want.
 *
 */
+
+
+
+
+
 class MbedClient: public M2MInterfaceObserver {
 public:
 
+
+	// (1)
     // constructor for MbedClient object, initialize private variables
     MbedClient(struct MbedClientDevice device) {
         _interface = NULL;
@@ -67,6 +82,9 @@ public:
         _device = device;
     }
 
+
+
+    // (2)
     // de-constructor for MbedClient object, you can ignore this
     ~MbedClient() {
         if(_interface) {
@@ -77,42 +95,53 @@ public:
         }
     }
 
+
+
+    // (3)
     // debug printf function
     void trace_printer(const char* str) {
         printf("\r\n%s\r\n", str);
     }
 
+
+
+
+
+    // (4)
     /*
     *  Creates M2MInterface using which endpoint can
     *  setup its name, resource type, life time, connection mode,
     *  Currently only LwIPv4 is supported.
     */
-    void create_interface(const char *server_address,
-                          void *handler=NULL) {
-	// Randomizing listening port for Certificate mode connectivity
-    _server_address = server_address;
-	uint16_t port = rand() % 65535 + 12345;
+    void create_interface(const char *server_address, void *handler=NULL) {
 
-    // create mDS interface object, this is the base object everything else attaches to
-    _interface = M2MInterfaceFactory::create_interface(*this,
-                                                      MBED_ENDPOINT_NAME,       // endpoint name string
-                                                      "test",                   // endpoint type string
-                                                      100,                      // lifetime
-                                                      port,                     // listen port
-                                                      MBED_DOMAIN,              // domain string
-                                                      SOCKET_MODE,              // binding mode
-                                                      M2MInterface::LwIP_IPv4,  // network stack
-                                                      "");                      // context address string
-    const char *binding_mode = (SOCKET_MODE == M2MInterface::UDP) ? "UDP" : "TCP";
-    printf("\r\nSOCKET_MODE : %s\r\n", binding_mode);
-    printf("Connecting to %s\r\n", server_address);
+    	// Randomizing listening port for Certificate mode connectivity
+    	_server_address = server_address;
+    	uint16_t port = rand() % 65535 + 12345;
 
-    if(_interface) {
-        _interface->set_platform_network_handler(handler);
+    	// create mDS interface object, this is the base object everything else attaches to
+    	_interface = M2MInterfaceFactory::create_interface(*this,
+                                                      	  MBED_ENDPOINT_NAME,       // endpoint name string
+														  "test",                   // endpoint type string
+														  100,                      // lifetime
+														  port,                     // listen port
+														  MBED_DOMAIN,              // domain string
+														  SOCKET_MODE,              // binding mode
+														  M2MInterface::LwIP_IPv4,  // network stack
+														  "");                      // context address string
+    	const char *binding_mode = (SOCKET_MODE == M2MInterface::UDP) ? "UDP" : "TCP";
+    	printf("\r\nSOCKET_MODE : %s\r\n", binding_mode);
+    	printf("Connecting to %s\r\n", server_address);
+
+    	if(_interface) {
+    		_interface->set_platform_network_handler(handler);
+    	}
     }
 
-    }
 
+
+
+    // (5)
     /*
     *  check private variable to see if the registration was sucessful or not
     */
@@ -120,6 +149,9 @@ public:
         return _registered;
     }
 
+
+
+    // (6)
     /*
     *  check private variable to see if un-registration was sucessful or not
     */
@@ -127,13 +159,22 @@ public:
         return _unregistered;
     }
 
+
+
+
+    // (7)
     /*
-    *  Creates register server object with mbed device server address and other parameters
-    *  required for client to connect to mbed device server.
-    */
+     *
+     *  Creates register server object with mbed device server address and other parameters
+     *  required for client to connect to mbed device server.
+     *
+     */
     M2MSecurity* create_register_object() {
-        // create security object using the interface factory.
-        // this will generate a security ObjectID and ObjectInstance
+
+    	// Security Object
+        // Create security object using the interface factory.
+        // This will generate a security ObjectID and ObjectInstance
+
         M2MSecurity *security = M2MInterfaceFactory::create_security(M2MSecurity::M2MServer);
 
         // make sure security ObjectID/ObjectInstance was created successfully
@@ -148,6 +189,12 @@ public:
         return security;
     }
 
+
+
+
+
+
+    // (8)
     /*
     * Creates device object which contains mandatory resources linked with
     * device endpoint.
@@ -166,6 +213,11 @@ public:
         return device;
     }
 
+
+
+
+
+    // (9)
     /*
     * register an object
     */
@@ -176,6 +228,10 @@ public:
         }
     }
 
+
+
+
+    // (10)
     /*
     * unregister all objects
     */
@@ -186,6 +242,11 @@ public:
         }
     }
 
+
+
+
+
+    // (11)
     //Callback from mbed client stack when the bootstrap
     // is successful, it returns the mbed Device Server object
     // which will be used for registering the resources to
@@ -198,6 +259,10 @@ public:
         }
     }
 
+
+
+
+    // (12)
     //Callback from mbed client stack when the registration
     // is successful, it returns the mbed Device Server object
     // to which the resources are registered and registered objects.
@@ -207,6 +272,10 @@ public:
         trace_printer("Registered object successfully!");
     }
 
+
+
+
+    // (13)
     //Callback from mbed client stack when the unregistration
     // is successful, it returns the mbed Device Server object
     // to which the resources were unregistered.
@@ -216,6 +285,11 @@ public:
         _registered = false;               
     }
 
+
+
+
+
+    // (14)
     /*
     * Callback from mbed client stack when registration is updated
     */
@@ -275,6 +349,13 @@ public:
         }
     }
 
+
+
+
+
+
+
+    // (15)
     /* Callback from mbed client stack if any value has changed
     *  during PUT operation. Object and its type is passed in
     *  the callback.
@@ -290,6 +371,9 @@ public:
                );
     }
 
+
+
+    // (16)
     /*
     * update the registration period
     */
@@ -299,6 +383,11 @@ public:
         }
     }
 
+
+
+
+
+    // (17)
     /*
     * manually configure the security object private variable
     */
@@ -307,6 +396,9 @@ public:
             _register_security = register_object;
         }
     }
+
+
+
 
 private:
 
@@ -324,5 +416,6 @@ private:
     struct MbedClientDevice  _device;
     String                   _server_address;
 };
+
 
 #endif // __SIMPLECLIENT_H__

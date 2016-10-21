@@ -122,7 +122,7 @@ public:
     	// create mDS interface object, this is the base object everything else attaches to
     	_interface = M2MInterfaceFactory::create_interface(*this,
                                                       	  MBED_ENDPOINT_NAME,       // endpoint name string
-														  "test",                   // endpoint type string
+														  "ublox",                  // endpoint type string
 														  100,                      // lifetime
 														  port,                     // listen port
 														  MBED_DOMAIN,              // domain string
@@ -171,6 +171,8 @@ public:
      */
     M2MSecurity* create_register_object() {
 
+    	printf("create_register_object \r\n");
+
     	// Security Object
         // Create security object using the interface factory.
         // This will generate a security ObjectID and ObjectInstance
@@ -200,14 +202,17 @@ public:
     * device endpoint.
     */
     M2MDevice* create_device_object() {
+
+    	printf("create_device_object \r\n");
+
         // create device objectID/ObjectInstance
         M2MDevice *device = M2MInterfaceFactory::create_device();
         // make sure device object was created successfully
         if(device) {
             // add resourceID's to device objectID/ObjectInstance
             device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
-            device->create_resource(M2MDevice::DeviceType, _device.Type);
-            device->create_resource(M2MDevice::ModelNumber, _device.ModelNumber);
+            device->create_resource(M2MDevice::DeviceType,   _device.Type);
+            device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
             device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
         }
         return device;
@@ -247,11 +252,12 @@ public:
 
 
     // (11)
-    //Callback from mbed client stack when the bootstrap
+    // Callback from mbed client stack when the bootstrap
     // is successful, it returns the mbed Device Server object
     // which will be used for registering the resources to
     // mbed Device server.
     void bootstrap_done(M2MSecurity *server_object){
+    	printf("bootstrap_done\r\n");
         if(server_object) {
             _bootstrapped = true;
             _error = false;
@@ -263,24 +269,24 @@ public:
 
 
     // (12)
-    //Callback from mbed client stack when the registration
+    // Callback from mbed client stack when the registration
     // is successful, it returns the mbed Device Server object
     // to which the resources are registered and registered objects.
     void object_registered(M2MSecurity */*security_object*/, const M2MServer &/*server_object*/){
         _registered = true;
         _unregistered = false;
-        trace_printer("Registered object successfully!");
+        printf("Registered object successfully! \r\n");
     }
 
 
 
 
     // (13)
-    //Callback from mbed client stack when the unregistration
+    // Callback from mbed client stack when the unregistration
     // is successful, it returns the mbed Device Server object
     // to which the resources were unregistered.
     void object_unregistered(M2MSecurity */*server_object*/){
-        trace_printer("Unregistered Object Successfully");
+        printf("Unregistered Object Successfully \r\n");
         _unregistered = true;
         _registered = false;               
     }
@@ -298,8 +304,12 @@ public:
         *  mbed client stack. This print statement is turned off because it
         *  tends to happen alot.
         */
-        //trace_printer("\r\nRegistration Updated\r\n");
+        printf("Registration Updated\r\n");
     }
+
+
+
+
 
     // Callback from mbed client stack if any error is encountered
     // during any of the LWM2M operations. Error type is passed in
@@ -356,12 +366,13 @@ public:
 
 
     // (15)
-    /* Callback from mbed client stack if any value has changed
-    *  during PUT operation. Object and its type is passed in
-    *  the callback.
-    *  BaseType enum from m2mbase.h
-    *       Object = 0x0, Resource = 0x1, ObjectInstance = 0x2, ResourceInstance = 0x3
-    */
+    /*
+     *  Callback from mbed client stack if any value has changed
+     *  during PUT operation. Object and its type is passed in
+     *  the callback.
+     *  BaseType enum from m2mbase.h
+     *       Object = 0x0, Resource = 0x1, ObjectInstance = 0x2, ResourceInstance = 0x3
+     */
     void value_updated(M2MBase *base, M2MBase::BaseType type) {
         printf("\r\nPUT Request Received!");
         printf("\r\nName :'%s', \r\nType : '%d' (0 for Object, 1 for Resource), \r\nType : '%s'\r\n",
@@ -392,6 +403,7 @@ public:
     * manually configure the security object private variable
     */
    void set_register_object(M2MSecurity *register_object) {
+
         if (_register_security == NULL) {
             _register_security = register_object;
         }

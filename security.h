@@ -18,8 +18,8 @@
  
 #include <inttypes.h>
  
-#define MBED_DOMAIN "e5728ced-5cfe-4812-833f-375eb9ba65d2"
-#define MBED_ENDPOINT_NAME "323b5137-37f7-4ca3-8cd6-d87e0810312a"
+#define MBED_DOMAIN          "e5728ced-5cfe-4812-833f-375eb9ba65d2"
+#define MBED_ENDPOINT_NAME   "323b5137-37f7-4ca3-8cd6-d87e0810312a"
  
 const uint8_t SERVER_CERT[] = "-----BEGIN CERTIFICATE-----\r\n"
 "MIIBmDCCAT6gAwIBAgIEVUCA0jAKBggqhkjOPQQDAjBLMQswCQYDVQQGEwJGSTEN\r\n"

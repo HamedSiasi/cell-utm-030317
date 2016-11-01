@@ -15,31 +15,29 @@
  */
 
 #include "simpleclient.h"
-#include <string>
-#include <sstream>
-#include <vector>
-#include "mbed-trace/mbed_trace.h"
-#include "mbedtls/entropy_poll.h"
+//#include <string>
+//#include <sstream>
+//#include <vector>
+//#include "mbed-trace/mbed_trace.h"
+//#include "mbedtls/entropy_poll.h"
 #include "security.h"
 #include "mbed.h"
-#include "rtos.h"
+//#include "rtos.h"
 #include "EthernetInterface.h"
 
-EthernetInterface eth;
+//__attribute__((section("AHBSRAM0")))
+//EthernetInterface eth;
 
 #define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
 
+__attribute__((section("AHBSRAM0")))
+struct MbedClientDevice device;
 
-struct MbedClientDevice device = {
-    "Manufacturer_String",      // Manufacturer
-    "Type_String",              // Type
-    "ModelNumber_String",       // ModelNumber
-    "SerialNumber_String"       // SerialNumber
-};
-
-
+__attribute__((section("AHBSRAM0")))
 MbedClient  mbed_client(device);
-Ticker      timer;
+//__attribute__((section("AHBSRAM0")))
+//Ticker      timer;
+__attribute__((section("AHBSRAM0")))
 DigitalOut  led1(LED1);
 
 
@@ -84,20 +82,6 @@ public:
 
     void postHandling(void *argument) {
         // Check if POST contains payload
-        if (argument) {
-            M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)argument;
-            String object_name = param->get_argument_object_name();
-            uint16_t object_instance_id = param->get_argument_object_instance_id();
-            String resource_name = param->get_argument_resource_name();
-            int payload_length = param->get_argument_value_length();
-            uint8_t* payload = param->get_argument_value();
-
-            printf("[POST] Resource: %s/%d/%s executed\r\n", object_name.c_str(), object_instance_id, resource_name.c_str());
-            printf("[POST] Payload: %.*s\r\n", payload_length, payload);
-        }else{
-        	printf("[POST] Received! NO Payload \r\n");
-        }
-
         led1 = !led1;
     }
 
@@ -109,89 +93,90 @@ private:
 
 
 // Network interaction must be performed outside of interrupt context
-Semaphore updates(0);
-volatile bool registered = false;
-volatile bool clicked = false;
-osThreadId mainThread;
+//__attribute__((section("AHBSRAM0")))
+//Semaphore updates(0);
+//volatile bool registered = false;
+//volatile bool clicked = false;
+//osThreadId mainThread;
+//
+//void unregister() {
+//	printf("unregister \r\n");
+//    registered = false;
+//    updates.release();
+//}
+//
+//void button_clicked() {
+//	printf("button_clicked \r\n");
+//    clicked = true;
+//    updates.release();
+//}
 
-void unregister() {
-	printf("unregister \r\n");
-    registered = false;
-    updates.release();
-}
-
-void button_clicked() {
-	printf("button_clicked \r\n");
-    clicked = true;
-    updates.release();
-}
 
 
-
-Ticker status_ticker;
+//Ticker status_ticker;
 
 
 
 int main() {
-    unsigned int seed;
-    size_t len;
-
-#ifdef MBEDTLS_ENTROPY_HARDWARE_ALT
-    // Used to randomize source port
-    mbedtls_hardware_poll(NULL, (unsigned char *) &seed, sizeof seed, &len);
-
-#elif defined MBEDTLS_TEST_NULL_ENTROPY
-
-#warning "mbedTLS security feature is disabled. Connection will not be secure !! Implement proper hardware entropy for your selected hardware."
-    // Used to randomize source port
-    mbedtls_null_entropy_poll( NULL,(unsigned char *) &seed, sizeof seed, &len);
-
-#else
-
-#error "This hardware does not have entropy, endpoint will not register to Connector.\
-You need to enable NULL ENTROPY for your application, but if this configuration change is made then no security is offered by mbed TLS.\
-Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app.json macros to register your endpoint."
-#endif
-
-
+//    unsigned int seed;
+//    size_t len;
+//
+//#ifdef MBEDTLS_ENTROPY_HARDWARE_ALT
+//    // Used to randomize source port
+//    mbedtls_hardware_poll(NULL, (unsigned char *) &seed, sizeof seed, &len);
+//
+//#elif defined MBEDTLS_TEST_NULL_ENTROPY
+//
+//#warning "mbedTLS security feature is disabled. Connection will not be secure !! Implement proper hardware entropy for your selected hardware."
+//    // Used to randomize source port
+//    mbedtls_null_entropy_poll( NULL,(unsigned char *) &seed, sizeof seed, &len);
+//
+//#else
+//
+//#error "This hardware does not have entropy, endpoint will not register to Connector.\
+//You need to enable NULL ENTROPY for your application, but if this configuration change is made then no security is offered by mbed TLS.\
+//Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app.json macros to register your endpoint."
+//#endif
 
 
 
-    srand(seed);
+
+
+    //srand(seed);
     //status_ticker.attach_us(blinky, 250000);
 
     // Keep track of the main thread
-    mainThread = osThreadGetId();
-    printf("Starting mbed Client example...\r\n");
-    mbed_trace_init();
-    mbed_trace_print_function_set(trace_printer);
+    //mainThread = osThreadGetId();
+    //printf("Starting mbed Client example...\r\n");
+    //mbed_trace_init();
+    //mbed_trace_print_function_set(trace_printer);
 
-    NetworkInterface *network_interface = 0;
-    int connect_success = -1;
-    printf("Using Ethernet\r\n");
-
-    connect_success = eth.connect();
-    network_interface = &eth;
-
-    if(connect_success == 0)
-    {
-    	printf("Connected to Network successfully\r\n");
-    }
-    else
-    {
-        printf("Connection to Network Failed %d! Exiting application....\r\n", connect_success);
-        return 0;
-    }
-
-    const char *ip_addr = network_interface->get_ip_address();
-    if (ip_addr)
-    {
-        printf("IP address %s\r\n", ip_addr);
-    }
-    else
-    {
-        printf("No IP address\r\n");
-    }
+//    NetworkInterface *network_interface = 0;
+//    int connect_success = -1;
+//    printf("Using Ethernet\r\n");
+//
+//    connect_success = eth.connect();
+//    network_interface = &eth;
+//
+//    if(connect_success == 0)
+//    {
+//    	printf("Connected to Network successfully\r\n");
+//    }
+//    else
+//    {
+//        printf("Connection to Network Failed %d! Exiting application....\r\n", connect_success);
+//        return 0;
+//    }
+//
+//    const char *ip_addr = network_interface->get_ip_address();
+//    if (ip_addr)
+//    {
+//        printf("IP address %s\r\n", ip_addr);
+//    }
+//    else
+//    {
+//        printf("No IP address\r\n");
+//    }
 
 
 
@@ -205,9 +190,13 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     // Send update of endpoint resource values to connector every 15 seconds periodically
     //timer.attach(&button_clicked, 15.0);
 
-    mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
+    printf("1\r\n");
+    mbed_client.create_interface(MBED_SERVER_ADDRESS, NULL);
+    printf("2\r\n");
     M2MSecurity* register_object = mbed_client.create_register_object(); // server object specifying connector info
+    printf("3\r\n");
     M2MDevice*   device_object   = mbed_client.create_device_object();   // device resources object
+    printf("4\r\n");
 
 
     printf("Create list of Objects to register \r\n");
@@ -219,25 +208,29 @@ Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app
     object_list.push_back(led_resource.get_object());
 
     // Set endpoint registration object
+    printf("6\r\n");
     mbed_client.set_register_object(register_object);
 
     // Register with mbed Device Connector
+    printf("7\r\n");
     mbed_client.test_register(register_object, object_list);
-    registered = true;
+    //registered = true;
 
 
 
 
+    printf("8\r\n");
 
 
 
-    while (true)
-    {
-        updates.wait(25000);
-
-        mbed_client.test_update_register();
-    }
-
-    mbed_client.test_unregister();
-    status_ticker.detach();
+//    while (true)
+//    {
+//        updates.wait(5000);
+//
+//        mbed_client.test_update_register();
+//        printf("9\r\n");
+//    }
+//
+//    mbed_client.test_unregister();
+    //status_ticker.detach();
 }

@@ -20,7 +20,8 @@
  
 #define MBED_DOMAIN          "e5728ced-5cfe-4812-833f-375eb9ba65d2"
 #define MBED_ENDPOINT_NAME   "323b5137-37f7-4ca3-8cd6-d87e0810312a"
- 
+
+__attribute__((section("AHBSRAM1")))
 const uint8_t SERVER_CERT[] = "-----BEGIN CERTIFICATE-----\r\n"
 "MIIBmDCCAT6gAwIBAgIEVUCA0jAKBggqhkjOPQQDAjBLMQswCQYDVQQGEwJGSTEN\r\n"
 "MAsGA1UEBwwET3VsdTEMMAoGA1UECgwDQVJNMQwwCgYDVQQLDANJb1QxETAPBgNV\r\n"
@@ -33,6 +34,8 @@ const uint8_t SERVER_CERT[] = "-----BEGIN CERTIFICATE-----\r\n"
 "NxLKWwf4O7D6JasGBYf9+ZLwl0iaRjTjytO+Kw==\r\n"
 "-----END CERTIFICATE-----\r\n";
  
+
+__attribute__((section("AHBSRAM1")))
 const uint8_t CERT[] = "-----BEGIN CERTIFICATE-----\r\n"
 "MIIBzzCCAXOgAwIBAgIEeW72DzAMBggqhkjOPQQDAgUAMDkxCzAJBgNVBAYTAkZ\r\n"
 "JMQwwCgYDVQQKDANBUk0xHDAaBgNVBAMME21iZWQtY29ubmVjdG9yLTIwMTYwHh\r\n"
@@ -46,6 +49,8 @@ const uint8_t CERT[] = "-----BEGIN CERTIFICATE-----\r\n"
 "kHpXfWOFQAiEAilXGCoOiAf3EGXUZVT+iwxjXsqE8z0PQqMp8tXgslo4=\r\n"
 "-----END CERTIFICATE-----\r\n";
  
+
+__attribute__((section("AHBSRAM1")))
 const uint8_t KEY[] = "-----BEGIN PRIVATE KEY-----\r\n"
 "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5vgQyhbjWoLeKMOT\r\n"
 "vPuEBAM+148QlcBq9ANkQoknl86hRANCAASFCAT6u+StzlCJZyC5PTbBqv0KEVgd\r\n"

@@ -2,9 +2,14 @@
     "config": {
     	"security-mode": "NONE"
     },
-    "macros": ["MBEDTLS_USER_CONFIG_FILE=\"mbedtls_mbed_client_config.h\""],
+    "macros": ["MBEDTLS_USER_CONFIG_FILE=\"mbedtls_mbed_client_config.h\"",
+    "MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES",
+    "MBEDTLS_TEST_NULL_ENTROPY",
+    "__HEAP_SIZE=12000"],
     "target_overrides": {
         "*": {
+        	"mbed-client.sn-coap-max-blockwise-payload-size": 1024,
+        	"mbed-client.sn-coap-duplication-max-msgs-count": 1,
             "target.features_add": ["CLIENT", "COMMON_PAL"],
             "mbed-client.reconnection-count": 3,
             "mbed-client.reconnection-interval": 5

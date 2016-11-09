@@ -1,4 +1,5 @@
-/*
+
+ /*
  * Copyright (c) 2015 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the License); you may
@@ -15,31 +16,37 @@
  */
 
 #include "simpleclient.h"
-//#include <string>
-//#include <sstream>
-//#include <vector>
-//#include "mbed-trace/mbed_trace.h"
-//#include "mbedtls/entropy_poll.h"
-#include "security.h"
 #include "mbed.h"
-//#include "rtos.h"
-#include "EthernetInterface.h"
-
-//__attribute__((section("AHBSRAM0")))
-//EthernetInterface eth;
 
 #define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
+//#define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684"
+#define CELLULAR_NETWORK 1
 
-__attribute__((section("AHBSRAM0")))
-struct MbedClientDevice device;
+#ifdef CELLULAR_NETWORK
+#include "MDM.h"
+//#include "mdmUDPSocket.h"
+#define SIMPIN      NULL
+#define APN         "giffgaff.com"
+#define USERNAME    "giffgaff"
+#define PASSWORD    NULL
+#else
+#include "EthernetInterface.h"
+__attribute__((section("AHBSRAM0")))  EthernetInterface eth;
+#endif
 
-__attribute__((section("AHBSRAM0")))
-MbedClient  mbed_client(device);
-//__attribute__((section("AHBSRAM0")))
-//Ticker      timer;
-__attribute__((section("AHBSRAM0")))
-DigitalOut  led1(LED1);
 
+// no attribute !
+struct MbedClientDevice device = {
+    "Manufacturer_String",      // Manufacturer
+    "Type_String",              // Type
+    "ModelNumber_String",       // ModelNumber
+    "SerialNumber_String"       // SerialNumber
+};
+
+
+
+__attribute__((section("AHBSRAM0")))   MbedClient  mbed_client(device);
+__attribute__((section("AHBSRAM0")))   DigitalOut  led1(LED1);
 
 
 class LedResource {
@@ -82,6 +89,20 @@ public:
 
     void postHandling(void *argument) {
         // Check if POST contains payload
+        if (argument) {
+            M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)argument;
+            String object_name = param->get_argument_object_name();
+            uint16_t object_instance_id = param->get_argument_object_instance_id();
+            String resource_name = param->get_argument_resource_name();
+            int payload_length = param->get_argument_value_length();
+            uint8_t* payload = param->get_argument_value();
+
+            printf("[POST] Resource: %s/%d/%s executed\r\n", object_name.c_str(), object_instance_id, resource_name.c_str());
+            printf("[POST] Payload: %.*s\r\n", payload_length, payload);
+        }else{
+        	printf("[POST] Received! NO Payload \r\n");
+        }
+
         led1 = !led1;
     }
 
@@ -91,25 +112,12 @@ private:
 
 
 
-
 // Network interaction must be performed outside of interrupt context
-//__attribute__((section("AHBSRAM0")))
-//Semaphore updates(0);
+//__attribute__((section("AHBSRAM0"))) Semaphore updates(0);
 //volatile bool registered = false;
 //volatile bool clicked = false;
 //osThreadId mainThread;
-//
-//void unregister() {
-//	printf("unregister \r\n");
-//    registered = false;
-//    updates.release();
-//}
-//
-//void button_clicked() {
-//	printf("button_clicked \r\n");
-//    clicked = true;
-//    updates.release();
-//}
+
 
 
 
@@ -137,100 +145,96 @@ int main() {
 //You need to enable NULL ENTROPY for your application, but if this configuration change is made then no security is offered by mbed TLS.\
 //Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app.json macros to register your endpoint."
 //#endif
+//    srand(seed);
+//    //status_ticker.attach_us(blinky, 250000);
+//    // Keep track of the main thread
+//    //mainThread = osThreadGetId();
+//    printf("Starting mbed Client example...\r\n");
+//    //mbed_trace_init();
+//    //mbed_trace_print_function_set(trace_printer);
 
+    NetworkInterface *network_interface = 0;
+    int connect_success = -1;
 
+	// -------------------- Transport layer --------------------
 
+#ifdef CELLULAR_NETWORK
+    printf("Using Cellular Network\r\n\n");
 
+    //give time to module for powering up (ms)
+    wait_ms(3000);
+    // Create the modem object
+    MDMSerial mdm;
 
-    //srand(seed);
-    //status_ticker.attach_us(blinky, 250000);
+    mdm.setDebug(4);
 
-    // Keep track of the main thread
-    //mainThread = osThreadGetId();
-    //printf("Starting mbed Client example...\r\n");
-    //mbed_trace_init();
-    //mbed_trace_print_function_set(trace_printer);
-
-//    NetworkInterface *network_interface = 0;
-//    int connect_success = -1;
-//    printf("Using Ethernet\r\n");
+    connect_success = mdm.connect(SIMPIN, APN,USERNAME,PASSWORD);
+//    int socket = mdm.socketSocket(MDMParser::IPPROTO_UDP);
 //
-//    connect_success = eth.connect();
-//    network_interface = &eth;
+//    mdm.socketSetBlocking(socket, 10000);
+//    mdm.socketConnect(socket, "api.connector.mbed.com", 5684);
 //
-//    if(connect_success == 0)
-//    {
-//    	printf("Connected to Network successfully\r\n");
-//    }
-//    else
-//    {
-//        printf("Connection to Network Failed %d! Exiting application....\r\n", connect_success);
-//        return 0;
-//    }
-//
-//    const char *ip_addr = network_interface->get_ip_address();
-//    if (ip_addr)
-//    {
-//        printf("IP address %s\r\n", ip_addr);
-//    }
-//    else
-//    {
-//        printf("No IP address\r\n");
-//    }
+//    MDMParser::IP ip = mdm.gethostbyname("api.connector.mbed.com");
+//    mdm.socketSendTo(socket, ip, 5684, "hamed", 6);
+
+
+    network_interface = (NetworkInterface *)&mdm;
+    if (!connect_success){
+    	printf("Connection to Cellular Network Failed !!!\r\n\n\nExiting application ...\r\n");
+        return -1;
+    }
+    else{
+    	printf("Connected to Cellular Network successfully!\r\n\n");
+    }
 
 
 
-    //---------------------------------------------------------------------------------------------------------------------
+#else
+    printf("Using Ethernet\r\n");
+    connect_success = eth.connect();
+    network_interface = &eth;
+    if(connect_success == 0){
+    	printf("Connected to Network successfully\r\n");
+    }
+    else{
+        printf("Connection to Network Failed %d! Exiting application....\r\n", connect_success);
+        return 0;
+    }
+    const char *ip_addr = network_interface->get_ip_address();
+    if (ip_addr){
+        printf("IP address %s\r\n", ip_addr);
+    }
+    else{
+        printf("No IP address\r\n");
+    }
+#endif
 
+
+    // -------------------- CoAP + LwM2M --------------------
 
 
     // we create our button and LED resources
     LedResource led_resource;
-
     // Send update of endpoint resource values to connector every 15 seconds periodically
     //timer.attach(&button_clicked, 15.0);
-
-    printf("1\r\n");
-    mbed_client.create_interface(MBED_SERVER_ADDRESS, NULL);
-    printf("2\r\n");
+    mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
     M2MSecurity* register_object = mbed_client.create_register_object(); // server object specifying connector info
-    printf("3\r\n");
     M2MDevice*   device_object   = mbed_client.create_device_object();   // device resources object
-    printf("4\r\n");
-
-
     printf("Create list of Objects to register \r\n");
     M2MObjectList object_list;
-
-
     printf("Add objects to list \r\n");
     object_list.push_back(device_object);
     object_list.push_back(led_resource.get_object());
-
     // Set endpoint registration object
-    printf("6\r\n");
     mbed_client.set_register_object(register_object);
-
     // Register with mbed Device Connector
-    printf("7\r\n");
     mbed_client.test_register(register_object, object_list);
     //registered = true;
-
-
-
-
-    printf("8\r\n");
-
-
-
-//    while (true)
-//    {
-//        updates.wait(5000);
-//
-//        mbed_client.test_update_register();
-//        printf("9\r\n");
-//    }
-//
-//    mbed_client.test_unregister();
+    while (true)
+    {
+    	wait_ms(10000);
+        mbed_client.test_update_register();
+    }
+    mbed_client.test_unregister();
     //status_ticker.detach();
 }

@@ -122,7 +122,7 @@ public:
     	// create mDS interface object, this is the base object everything else attaches to
     	_interface = M2MInterfaceFactory::create_interface(*this,
                                                       	  MBED_ENDPOINT_NAME,       // endpoint name string
-														  "test",                  // endpoint type string
+														  "ublox",                  // endpoint type string
 														  100,                      // lifetime
 														  port,                     // listen port
 														  MBED_DOMAIN,              // domain string
@@ -183,11 +183,10 @@ public:
         if(security) {
             // Add ResourceID's and values to the security ObjectID/ObjectInstance
             security->set_resource_value(M2MSecurity::M2MServerUri, _server_address);
-            security->set_resource_value(M2MSecurity::SecurityMode, M2MSecurity::NoSecurity);
-            //security->set_resource_value(M2MSecurity::SecurityMode, M2MSecurity::Certificate);
-            //security->set_resource_value(M2MSecurity::ServerPublicKey, SERVER_CERT, sizeof(SERVER_CERT));
-            //security->set_resource_value(M2MSecurity::PublicKey, CERT, sizeof(CERT));
-            //security->set_resource_value(M2MSecurity::Secretkey, KEY, sizeof(KEY));
+            security->set_resource_value(M2MSecurity::SecurityMode, M2MSecurity::Certificate);
+            security->set_resource_value(M2MSecurity::ServerPublicKey, SERVER_CERT, sizeof(SERVER_CERT));
+            security->set_resource_value(M2MSecurity::PublicKey, CERT, sizeof(CERT));
+            security->set_resource_value(M2MSecurity::Secretkey, KEY, sizeof(KEY));
         }
         return security;
     }
@@ -211,10 +210,10 @@ public:
         // make sure device object was created successfully
         if(device) {
             // add resourceID's to device objectID/ObjectInstance
-            //device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
-            //device->create_resource(M2MDevice::DeviceType,   _device.Type);
-            //device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
-            //device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
+            device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
+            device->create_resource(M2MDevice::DeviceType,   _device.Type);
+            device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
+            device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
         }
         return device;
     }
@@ -230,8 +229,10 @@ public:
     void test_register(M2MSecurity *register_object, M2MObjectList object_list){
         if(_interface) {
             // Register function
+        	printf("a1\r\n");
             _interface->register_object(register_object, object_list);
         }
+        printf("a2\r\n");
     }
 
 
@@ -276,7 +277,7 @@ public:
     void object_registered(M2MSecurity */*security_object*/, const M2MServer &/*server_object*/){
         _registered = true;
         _unregistered = false;
-        printf("SUCCESS! Registered object successfully! \r\n");
+        printf("Registered object successfully! \r\n");
     }
 
 
@@ -319,51 +320,40 @@ public:
         _error = true;
         switch(error){
             case M2MInterface::AlreadyExists:
-            	printf("[ERROR:] M2MInterface::AlreadyExist \r\n");
+                trace_printer("[ERROR:] M2MInterface::AlreadyExist");
                 break;
-
             case M2MInterface::BootstrapFailed:
-            	printf("[ERROR:] M2MInterface::BootstrapFailed \r\n");
+                trace_printer("[ERROR:] M2MInterface::BootstrapFailed");
                 break;
-
             case M2MInterface::InvalidParameters:
-            	printf("[ERROR:] M2MInterface::InvalidParameters \r\n");
+                trace_printer("[ERROR:] M2MInterface::InvalidParameters");
                 break;
-
             case M2MInterface::NotRegistered:
-            	printf("[ERROR:] M2MInterface::NotRegistered \r\n");
+                trace_printer("[ERROR:] M2MInterface::NotRegistered");
                 break;
-
             case M2MInterface::Timeout:
-            	printf("[ERROR:] M2MInterface::Timeout \r\n");
+                trace_printer("[ERROR:] M2MInterface::Timeout");
                 break;
-
             case M2MInterface::NetworkError:
-            	printf("[ERROR:] M2MInterface::NetworkError \r\n");
+                trace_printer("[ERROR:] M2MInterface::NetworkError");
                 break;
-
             case M2MInterface::ResponseParseFailed:
-            	printf("[ERROR:] M2MInterface::ResponseParseFailed \r\n");
+                trace_printer("[ERROR:] M2MInterface::ResponseParseFailed");
                 break;
-
             case M2MInterface::UnknownError:
-            	printf("[ERROR:] M2MInterface::UnknownError \r\n");
+                trace_printer("[ERROR:] M2MInterface::UnknownError");
                 break;
-
             case M2MInterface::MemoryFail:
-            	printf("[ERROR:] M2MInterface::MemoryFail \r\n");
+                trace_printer("[ERROR:] M2MInterface::MemoryFail");
                 break;
-
             case M2MInterface::NotAllowed:
-            	printf("[ERROR:] M2MInterface::NotAllowed \r\n");
+                trace_printer("[ERROR:] M2MInterface::NotAllowed");
                 break;
-
             case M2MInterface::SecureConnectionFailed:
-            	printf("[ERROR:] M2MInterface::SecureConnectionFailed \r\n");
+                trace_printer("[ERROR:] M2MInterface::SecureConnectionFailed");
                 break;
-
             case M2MInterface::DnsResolvingFailed:
-                printf("[ERROR:] M2MInterface::DnsResolvingFailed \r\n");
+                trace_printer("[ERROR:] M2MInterface::DnsResolvingFailed");
                 break;
 
             default:

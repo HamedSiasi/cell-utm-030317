@@ -1051,7 +1051,7 @@ int MDMParser::socketSocket(IpProtocol ipproto, int port)
     LOCK();
     // find an free socket
     socket = _findSocket();
-    TRACE("socketSocket(%d)\r\n", ipproto);
+    printf("socketSocket(%d)\r\n", ipproto);
     if (socket != SOCKET_ERROR) {
         if (ipproto == IPPROTO_UDP) {
             // sending port can only be set on 2G/3G modules

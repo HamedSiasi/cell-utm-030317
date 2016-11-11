@@ -127,11 +127,13 @@ public:
 														  port,                     // listen port
 														  MBED_DOMAIN,              // domain string
 														  SOCKET_MODE,              // binding mode
-														  M2MInterface::LwIP_IPv4,  // network stack
+														  M2MInterface::ATWINC_IPv4,  // network stack
 														  "");                      // context address string
     	const char *binding_mode = (SOCKET_MODE == M2MInterface::UDP) ? "UDP" : "TCP";
     	printf("\r\nSOCKET_MODE : %s\r\n", binding_mode);
     	printf("Connecting to %s\r\n", server_address);
+
+
 
     	if(_interface) {
     		_interface->set_platform_network_handler(handler);
@@ -183,10 +185,13 @@ public:
         if(security) {
             // Add ResourceID's and values to the security ObjectID/ObjectInstance
             security->set_resource_value(M2MSecurity::M2MServerUri, _server_address);
-            security->set_resource_value(M2MSecurity::SecurityMode, M2MSecurity::Certificate);
-            security->set_resource_value(M2MSecurity::ServerPublicKey, SERVER_CERT, sizeof(SERVER_CERT));
-            security->set_resource_value(M2MSecurity::PublicKey, CERT, sizeof(CERT));
-            security->set_resource_value(M2MSecurity::Secretkey, KEY, sizeof(KEY));
+            //security->set_resource_value(M2MSecurity::BootstrapServer, 0);
+            security->set_resource_value(M2MSecurity::SecurityMode, M2MSecurity::NoSecurity);
+
+//            security->set_resource_value(M2MSecurity::SecurityMode, M2MSecurity::Certificate);
+//            security->set_resource_value(M2MSecurity::ServerPublicKey, SERVER_CERT, sizeof(SERVER_CERT));
+//            security->set_resource_value(M2MSecurity::PublicKey, CERT, sizeof(CERT));
+//            security->set_resource_value(M2MSecurity::Secretkey, KEY, sizeof(KEY));
         }
         return security;
     }
@@ -210,10 +215,10 @@ public:
         // make sure device object was created successfully
         if(device) {
             // add resourceID's to device objectID/ObjectInstance
-            device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
-            device->create_resource(M2MDevice::DeviceType,   _device.Type);
-            device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
-            device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
+              device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
+//            device->create_resource(M2MDevice::DeviceType,   _device.Type);
+//            device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
+//            device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
         }
         return device;
     }

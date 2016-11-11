@@ -3,16 +3,16 @@
 
 #include "mdmSocket.h"
 
-/** TCP socket connection
+/** UDP socket connection
  */
-class mdmTCPSocketConnection: public mdmSocket
+class mdmUDPSocketConnection: public mdmSocket
 {
-    friend class mdmTCPSocketServer;
+    //friend class mdmTCPSocketServer;
 
 public:
-    /** TCP socket connection
+    /** UDP socket connection
     */
-    mdmTCPSocketConnection() {}
+    mdmUDPSocketConnection() {}
 
     /** Connects this TCP socket to the server
     \param host The host to connect to. It can either be an IP Address or a hostname that will be resolved with DNS.
@@ -27,7 +27,7 @@ public:
             return -1;
             
         if (_socket < 0) {
-            _socket = _mdm->socketSocket(MDMParser::IPPROTO_TCP);
+            _socket = _mdm->socketSocket(MDMParser::IPPROTO_UDP);
             if (_socket < 0) {
                 return -1;
             }

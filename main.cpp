@@ -24,7 +24,7 @@
 
 #ifdef CELLULAR_NETWORK
 #include "MDM.h"
-//#include "mdmUDPSocket.h"
+#include "mdmUDPSocket.h"
 #define SIMPIN      NULL
 #define APN         "giffgaff.com"
 #define USERNAME    "giffgaff"
@@ -112,46 +112,9 @@ private:
 
 
 
-// Network interaction must be performed outside of interrupt context
-//__attribute__((section("AHBSRAM0"))) Semaphore updates(0);
-//volatile bool registered = false;
-//volatile bool clicked = false;
-//osThreadId mainThread;
-
-
-
-
-//Ticker status_ticker;
-
 
 
 int main() {
-//    unsigned int seed;
-//    size_t len;
-//
-//#ifdef MBEDTLS_ENTROPY_HARDWARE_ALT
-//    // Used to randomize source port
-//    mbedtls_hardware_poll(NULL, (unsigned char *) &seed, sizeof seed, &len);
-//
-//#elif defined MBEDTLS_TEST_NULL_ENTROPY
-//
-//#warning "mbedTLS security feature is disabled. Connection will not be secure !! Implement proper hardware entropy for your selected hardware."
-//    // Used to randomize source port
-//    mbedtls_null_entropy_poll( NULL,(unsigned char *) &seed, sizeof seed, &len);
-//
-//#else
-//
-//#error "This hardware does not have entropy, endpoint will not register to Connector.\
-//You need to enable NULL ENTROPY for your application, but if this configuration change is made then no security is offered by mbed TLS.\
-//Add MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES and MBEDTLS_TEST_NULL_ENTROPY in mbed_app.json macros to register your endpoint."
-//#endif
-//    srand(seed);
-//    //status_ticker.attach_us(blinky, 250000);
-//    // Keep track of the main thread
-//    //mainThread = osThreadGetId();
-//    printf("Starting mbed Client example...\r\n");
-//    //mbed_trace_init();
-//    //mbed_trace_print_function_set(trace_printer);
 
     NetworkInterface *network_interface = 0;
     int connect_success = -1;
@@ -161,31 +124,18 @@ int main() {
 #ifdef CELLULAR_NETWORK
     printf("Using Cellular Network\r\n\n");
 
-    //give time to module for powering up (ms)
     wait_ms(3000);
-    // Create the modem object
     MDMSerial mdm;
-
     mdm.setDebug(4);
-
-    connect_success = mdm.connect(SIMPIN, APN,USERNAME,PASSWORD);
-//    int socket = mdm.socketSocket(MDMParser::IPPROTO_UDP);
-//
-//    mdm.socketSetBlocking(socket, 10000);
-//    mdm.socketConnect(socket, "api.connector.mbed.com", 5684);
-//
-//    MDMParser::IP ip = mdm.gethostbyname("api.connector.mbed.com");
-//    mdm.socketSendTo(socket, ip, 5684, "hamed", 6);
+    if (!mdm.connect(SIMPIN, APN,USERNAME,PASSWORD))
+    	return -1;
 
 
-    network_interface = (NetworkInterface *)&mdm;
-    if (!connect_success){
-    	printf("Connection to Cellular Network Failed !!!\r\n\n\nExiting application ...\r\n");
-        return -1;
-    }
-    else{
-    	printf("Connected to Cellular Network successfully!\r\n\n");
-    }
+    mdmUDPSocket socket;
+    socket.init();
+    socket.bind(5684);
+
+    network_interface = (NetworkInterface *)&socket;
 
 
 
@@ -212,28 +162,38 @@ int main() {
 
     // -------------------- CoAP + LwM2M --------------------
 
-
-    // we create our button and LED resources
     LedResource led_resource;
-    // Send update of endpoint resource values to connector every 15 seconds periodically
-    //timer.attach(&button_clicked, 15.0);
+
     mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
+
     M2MSecurity* register_object = mbed_client.create_register_object(); // server object specifying connector info
     M2MDevice*   device_object   = mbed_client.create_device_object();   // device resources object
     printf("Create list of Objects to register \r\n");
+
+
     M2MObjectList object_list;
     printf("Add objects to list \r\n");
+
+
     object_list.push_back(device_object);
     object_list.push_back(led_resource.get_object());
+
+
     // Set endpoint registration object
     mbed_client.set_register_object(register_object);
+
+
     // Register with mbed Device Connector
     mbed_client.test_register(register_object, object_list);
-    //registered = true;
+
+
+    printf("hooraa \r\n");
     while (true)
     {
     	wait_ms(10000);
+    	printf("pre update \r\n");
         mbed_client.test_update_register();
+        printf("update \r\n");
     }
     mbed_client.test_unregister();
     //status_ticker.detach();

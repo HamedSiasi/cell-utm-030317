@@ -24,7 +24,6 @@
 
 #ifdef CELLULAR_NETWORK
 #include "MDM.h"
-#include "mdmUDPSocket.h"
 #define SIMPIN      NULL
 #define APN         "giffgaff.com"
 #define USERNAME    "giffgaff"
@@ -131,11 +130,11 @@ int main() {
     	return -1;
 
 
-    mdmUDPSocket socket;
-    socket.init();
-    socket.bind(5684);
+    //mdmUDPSocket socket;
+    //socket.init();
+    //socket.bind(5684);
 
-    network_interface = (NetworkInterface *)&socket;
+    //network_interface = (NetworkInterface *)&socket;
 
 
 

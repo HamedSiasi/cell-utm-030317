@@ -19,11 +19,13 @@
 #include "mbed.h"
 
 #define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
-//#define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684"
 #define CELLULAR_NETWORK 1
 
+
+
 #ifdef CELLULAR_NETWORK
-#include "MDM.h"
+#include "CellInterface.h"
+__attribute__((section("AHBSRAM0")))  CellInterface cell;
 #define SIMPIN      NULL
 #define APN         "giffgaff.com"
 #define USERNAME    "giffgaff"
@@ -44,8 +46,8 @@ struct MbedClientDevice device = {
 
 
 
-__attribute__((section("AHBSRAM0")))   MbedClient  mbed_client(device);
-__attribute__((section("AHBSRAM0")))   DigitalOut  led1(LED1);
+__attribute__((section("AHBSRAM0"))) MbedClient  mbed_client(device);
+__attribute__((section("AHBSRAM0"))) DigitalOut  led1(LED1);
 
 
 class LedResource {
@@ -122,19 +124,18 @@ int main() {
 
 #ifdef CELLULAR_NETWORK
     printf("Using Cellular Network\r\n\n");
-
-    wait_ms(3000);
-    MDMSerial mdm;
-    mdm.setDebug(4);
-    if (!mdm.connect(SIMPIN, APN,USERNAME,PASSWORD))
-    	return -1;
+    wait_ms(2000);
+    connect_success = cell.connect(APN, USERNAME, PASSWORD);
 
 
-    //mdmUDPSocket socket;
-    //socket.init();
-    //socket.bind(5684);
-
-    //network_interface = (NetworkInterface *)&socket;
+    if (!connect_success){
+    	printf("Connection to Cellular Network Failed! Exiting application....\r\n");
+    	return 0;
+    }
+    else{
+    	printf("Connected to Cellular Network successfully\r\n");
+    }
+    network_interface = &cell;
 
 
 
@@ -194,6 +195,6 @@ int main() {
         mbed_client.test_update_register();
         printf("update \r\n");
     }
-    mbed_client.test_unregister();
+    //mbed_client.test_unregister();
     //status_ticker.detach();
 }

@@ -10,7 +10,6 @@
         "*": {
         	"mbed-client.sn-coap-max-blockwise-payload-size": 1024,
         	"mbed-client.sn-coap-duplication-max-msgs-count": 1,
-            "target.features_add": ["CLIENT", "COMMON_PAL"],
             "mbed-client.reconnection-count": 3,
             "mbed-client.reconnection-interval": 5
         }

@@ -17,22 +17,37 @@
 #include "CellInterface.h"
 //#include "mbed.h"
 
-static MDMSerial mdm;
+static MDMSerial *pMdm = NULL;
 
+CellInterface::CellInterface(){
+
+}
+CellInterface::~CellInterface(){
+
+}
 
 int CellInterface::connect(const char *apn /* = 0 */,
 		const char *username /* = 0 */,
 		const char *password /* = 0 */)
 {
-    if (!mdm.connect(NULL, apn, username, password) ){
-    	return 0;
-    }
+	pMdm = new MDMSerial();
+
+	if (pMdm != NULL) {
+		pMdm->setDebug(4);
+		if (!pMdm->connect(NULL, apn, username, password) ){
+	    	return 0;
+	    }
+	}
+
     return 1;
 }
 
 int CellInterface::disconnect()
 {
-	mdm.disconnect();
+	if (pMdm != NULL) {
+	   pMdm->disconnect();
+	}
+
     return 0;
 }
 
@@ -40,7 +55,9 @@ const char *CellInterface::get_ip_address()
 {
 	char textToWrite[ 16 ];
 	uint32_t ip;
-	ip = mdm.getIpAddress();
+	if (pMdm != NULL) {
+	  ip = pMdm->getIpAddress();
+	}
 	sprintf(textToWrite,"%lu", ip);
     return textToWrite;
 }

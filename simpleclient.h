@@ -235,7 +235,8 @@ public:
         if(_interface) {
             // Register function
         	printf("a1\r\n");
-            _interface->register_object(register_object, object_list);
+        	_interface->register_object(register_object, object_list);
+
         }
         printf("a2\r\n");
     }

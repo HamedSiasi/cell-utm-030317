@@ -8,6 +8,7 @@
     "__HEAP_SIZE=12000"],
     "target_overrides": {
         "*": {
+        	"target.features_add": ["CLIENT", "COMMON_PAL"],
         	"mbed-client.sn-coap-max-blockwise-payload-size": 1024,
         	"mbed-client.sn-coap-duplication-max-msgs-count": 1,
             "mbed-client.reconnection-count": 3,

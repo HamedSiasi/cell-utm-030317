@@ -25,10 +25,12 @@
 class CellInterface : public CellularInterface
 {
 public:
+	CellInterface();
+	~CellInterface();
 
-    virtual int connect(const char *apn = 0, const char *username = 0, const char *password = 0);
+	virtual int connect(const char *apn = 0, const char *username = 0, const char *password = 0);
 
-    virtual int disconnect();
+	virtual int disconnect();
 
     virtual const char *get_ip_address();
 

@@ -1,5 +1,4 @@
-
- /*
+/*
  * Copyright (c) 2015 ARM Limited. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  * Licensed under the Apache License, Version 2.0 (the License); you may
@@ -25,11 +24,11 @@
 
 #ifdef CELLULAR_NETWORK
 #include "CellInterface.h"
-__attribute__((section("AHBSRAM0")))  CellInterface cell;
 #define SIMPIN      NULL
 #define APN         "giffgaff.com"
 #define USERNAME    "giffgaff"
 #define PASSWORD    NULL
+
 #else
 #include "EthernetInterface.h"
 __attribute__((section("AHBSRAM0")))  EthernetInterface eth;
@@ -45,7 +44,6 @@ struct MbedClientDevice device = {
 };
 
 
-
 __attribute__((section("AHBSRAM0"))) MbedClient  mbed_client(device);
 __attribute__((section("AHBSRAM0"))) DigitalOut  led1(LED1);
 
@@ -57,10 +55,8 @@ public:
         // (1) Obj
         led_object = M2MInterfaceFactory::create_object("111" /*obj name*/);
 
-
         // (2) Instance
         M2MObjectInstance* led_inst = led_object->create_object_instance();
-
 
         // (3) Resouce
         M2MResource* status_res = led_inst->create_dynamic_resource(
@@ -69,7 +65,6 @@ public:
 				M2MResourceInstance::BOOLEAN  /*type*/,
 				true                         /*observable*/
 				                              /*multiple_instance*/);
-
 
         // (4) Read(GET) and Write(PUT)
         status_res->set_operation(M2MBase::GET_PUT_POST_DELETE_ALLOWED);
@@ -90,33 +85,28 @@ public:
 
     void postHandling(void *argument) {
         // Check if POST contains payload
-        if (argument) {
-            M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)argument;
-            String object_name = param->get_argument_object_name();
-            uint16_t object_instance_id = param->get_argument_object_instance_id();
-            String resource_name = param->get_argument_resource_name();
-            int payload_length = param->get_argument_value_length();
-            uint8_t* payload = param->get_argument_value();
-
-            printf("[POST] Resource: %s/%d/%s executed\r\n", object_name.c_str(), object_instance_id, resource_name.c_str());
-            printf("[POST] Payload: %.*s\r\n", payload_length, payload);
-        }else{
-        	printf("[POST] Received! NO Payload \r\n");
-        }
-
+//        if (argument) {
+//            M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)argument;
+//            String object_name = param->get_argument_object_name();
+//            uint16_t object_instance_id = param->get_argument_object_instance_id();
+//            String resource_name = param->get_argument_resource_name();
+//            int payload_length = param->get_argument_value_length();
+//            uint8_t* payload = param->get_argument_value();
+//
+//            printf("[POST] Resource: %s/%d/%s executed\r\n", object_name.c_str(), object_instance_id, resource_name.c_str());
+//            printf("[POST] Payload: %.*s\r\n", payload_length, payload);
+//        }else{
+//        	printf("[POST] Received! NO Payload \r\n");
+//        }
         led1 = !led1;
     }
-
 private:
     M2MObject* led_object;
 };
 
 
 
-
-
 int main() {
-
     NetworkInterface *network_interface = 0;
     int connect_success = -1;
 
@@ -125,8 +115,8 @@ int main() {
 #ifdef CELLULAR_NETWORK
     printf("Using Cellular Network\r\n\n");
     wait_ms(2000);
+    CellInterface cell;
     connect_success = cell.connect(APN, USERNAME, PASSWORD);
-
 
     if (!connect_success){
     	printf("Connection to Cellular Network Failed! Exiting application....\r\n");
@@ -136,7 +126,6 @@ int main() {
     	printf("Connected to Cellular Network successfully\r\n");
     }
     network_interface = &cell;
-
 
 
 #else
@@ -198,3 +187,20 @@ int main() {
     //mbed_client.test_unregister();
     //status_ticker.detach();
 }
+
+
+
+
+//#include "mbed.h"
+//
+//DigitalOut myled(LED1);
+//
+//int main() {
+//    while(1) {
+//    	printf("a");
+//        myled = 1;
+//        wait(0.2);
+//        myled = 0;
+//        wait(0.2);
+//    }
+//}

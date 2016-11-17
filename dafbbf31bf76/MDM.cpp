@@ -347,7 +347,8 @@ int MDMParser::_cbInt(int type, const char* buf, int len, int* val)
 
 bool MDMParser::connect(
             const char* simpin, 
-            const char* apn, const char* username, 
+            const char* apn,
+			const char* username,
             const char* password, Auth auth,
             PinName pn)
 {

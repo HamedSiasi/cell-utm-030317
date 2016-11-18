@@ -127,7 +127,7 @@ public:
 														  port,                     // listen port
 														  MBED_DOMAIN,              // domain string
 														  SOCKET_MODE,              // binding mode
-														  M2MInterface::ATWINC_IPv4,  // network stack
+														  M2MInterface::LwIP_IPv4,  // network stack
 														  "");                      // context address string
     	const char *binding_mode = (SOCKET_MODE == M2MInterface::UDP) ? "UDP" : "TCP";
     	printf("\r\nSOCKET_MODE : %s\r\n", binding_mode);

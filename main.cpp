@@ -17,7 +17,8 @@
 #include "simpleclient.h"
 #include "mbed.h"
 
-#define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
+//#define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
+#define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684"
 #define CELLULAR_NETWORK 1
 
 
@@ -28,6 +29,7 @@
 #define APN         "giffgaff.com"
 #define USERNAME    "giffgaff"
 #define PASSWORD    NULL
+//__attribute__((section("AHBSRAM0")))  CellInterface cell;
 
 #else
 #include "EthernetInterface.h"
@@ -117,6 +119,7 @@ int main() {
     wait_ms(2000);
     CellInterface cell;
     connect_success = cell.connect(APN, USERNAME, PASSWORD);
+    network_interface = &cell;
 
     if (!connect_success){
     	printf("Connection to Cellular Network Failed! Exiting application....\r\n");
@@ -125,7 +128,7 @@ int main() {
     else{
     	printf("Connected to Cellular Network successfully\r\n");
     }
-    network_interface = &cell;
+
 
 
 #else
@@ -151,7 +154,7 @@ int main() {
 
     // -------------------- CoAP + LwM2M --------------------
 
-    LedResource led_resource;
+    //LedResource led_resource;
 
     mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
 
@@ -165,7 +168,7 @@ int main() {
 
 
     object_list.push_back(device_object);
-    object_list.push_back(led_resource.get_object());
+    //object_list.push_back(led_resource.get_object());
 
 
     // Set endpoint registration object
@@ -176,20 +179,16 @@ int main() {
     mbed_client.test_register(register_object, object_list);
 
 
-    printf("hooraa \r\n");
+    printf("Register Done!\r\n");
     while (true)
     {
     	wait_ms(10000);
-    	printf("pre update \r\n");
         mbed_client.test_update_register();
-        printf("update \r\n");
+        printf("Register update \r\n");
     }
-    //mbed_client.test_unregister();
+    mbed_client.test_unregister();
     //status_ticker.detach();
 }
-
-
-
 
 //#include "mbed.h"
 //

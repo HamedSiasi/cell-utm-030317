@@ -17,8 +17,9 @@
 #ifndef CELL_INTERFACE_H
 #define CELL_INTERFACE_H
 
+#include "nsapi.h"
 #include "CellularInterface.h"
-#include "MDM.h"
+
 
 //class NetworkStack;
 

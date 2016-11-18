@@ -6,7 +6,7 @@
 #include "MDMAPN.h"
         
 #define PROFILE         "0"   //!< this is the psd profile used
-#define MAX_SIZE        64//128   //!< max expected messages
+#define MAX_SIZE        128   //!< max expected messages
 // num sockets
 #define NUMSOCKETS      (sizeof(_sockets)/sizeof(*_sockets))
 //! test if it is a socket is ok to use
@@ -343,7 +343,7 @@ int MDMParser::_cbInt(int type, const char* buf, int len, int* val)
     return WAIT;
 }
 
-// ----------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------
 
 bool MDMParser::connect(
             const char* simpin, 
@@ -772,7 +772,9 @@ int MDMParser::_cbUACTIND(int type, const char* buf, int len, int* i)
     return WAIT;
 }
 
-// ----------------------------------------------------------------
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------
 // internet connection 
 
 bool MDMParser::_activateProfile(const char* apn, const char* username, const char* password, Auth auth)
@@ -1033,7 +1035,10 @@ MDMParser::IP MDMParser::gethostbyname(const char* host)
     return ip;
 }
 
-// ----------------------------------------------------------------
+
+
+
+// -----------------------------------------------------------------------------------------------------------------------------------------------
 // sockets
 
 int MDMParser::_cbUSOCR(int type, const char* buf, int len, int* handle)
@@ -1361,7 +1366,13 @@ int MDMParser::_findSocket(int handle) {
     return SOCKET_ERROR;
 }
 
-// ----------------------------------------------------------------
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------
 // HTTP
 
 int MDMParser::httpFindProfile()
@@ -1656,7 +1667,10 @@ const char* MDMParser::getHTTPcmd(int httpCmdCode)
    }
 }
 
-// ----------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// SMS
 
 int MDMParser::_cbCMGL(int type, const char* buf, int len, CMGLparam* param)
 { 
@@ -1737,7 +1751,9 @@ bool MDMParser::smsRead(int ix, char* num, char* buf, int len)
     return ok;
 }
    
-// ----------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------------------------------------------------------------
   
 int MDMParser::_cbCUSD(int type, const char* buf, int len, char* resp)
 {
@@ -1763,7 +1779,9 @@ bool MDMParser::ussdCommand(const char* cmd, char* buf)
     return ok;
 }
 
-// ----------------------------------------------------------------
+
+
+// ------------------------------------------------------------------------------------------------------------------------------------
    
 int MDMParser::_cbUDELFILE(int type, const char* buf, int len, void*)
 {
@@ -1928,7 +1946,10 @@ int MDMParser::_cbULSTFILE(int type, const char* buf, int len, int* infoFile)
     return WAIT;
 }
 
-// ----------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
 int MDMParser::cellLocSrvTcp(const char* token, const char* server_1, const char* server_2, int days/* = 14*/, \
         int period/* = 4*/, int resolution/* = 1*/)
 {
@@ -2036,7 +2057,8 @@ int MDMParser::cellLocGetData(CellLocData *data, int index/*=0*/){
     return true;
 }
 
-// ----------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------------------------------
+
 bool MDMParser::setDebug(int level) 
 {
 #ifdef MDM_DEBUG
@@ -2112,7 +2134,8 @@ void MDMParser::dumpIp(MDMParser::IP ip,
         dprint(param, "Modem:IP " IPSTR "\r\n", IPNUM(ip));
 }
     
-// ----------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------------------
+
 int MDMParser::_parseMatch(Pipe<char>* pipe, int len, const char* sta, const char* end)
 {
     int o = 0;
@@ -2244,6 +2267,12 @@ int MDMParser::_getLine(Pipe<char>* pipe, char* buf, int len)
     return WAIT;
 }
 
+
+
+
+
+
+
 // ----------------------------------------------------------------
 // Serial Implementation 
 // ----------------------------------------------------------------
@@ -2318,6 +2347,9 @@ int MDMSerial::getLine(char* buffer, int length)
 {
     return _getLine(&_pipeRx, buffer, length);
 }
+
+
+
 
 // ----------------------------------------------------------------
 // USB Implementation 

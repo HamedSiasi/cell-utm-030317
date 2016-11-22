@@ -173,24 +173,24 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                 // SMS Command ---------------------------------
                 // +CNMI: <mem>,<index>
                 if (sscanf(cmd, "CMTI: \"%*[^\"]\",%d", &a) == 1) { 
-                    TRACE("New SMS at index %d\r\n", a);
+                    printf("New SMS at index %d\r\n", a);
                 // Socket Specific Command ---------------------------------
                 // +UUSORD: <socket>,<length>
                 } else if ((sscanf(cmd, "UUSORD: %d,%d", &a, &b) == 2)) {
                     int socket = _findSocket(a);
-                    TRACE("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
+                    printf("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
                     if (socket != SOCKET_ERROR)
                         _sockets[socket].pending = b;
                 // +UUSORF: <socket>,<length>
                 } else if ((sscanf(cmd, "UUSORF: %d,%d", &a, &b) == 2)) {
                     int socket = _findSocket(a);
-                    TRACE("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
+                    printf("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
                     if (socket != SOCKET_ERROR)
                         _sockets[socket].pending = b;
                 // +UUSOCL: <socket>
                 } else if ((sscanf(cmd, "UUSOCL: %d", &a) == 1)) {
                     int socket = _findSocket(a);
-                    TRACE("Socket %d: handle %d closed by remote host\r\n", socket, a);
+                    printf("Socket %d: handle %d closed by remote host\r\n", socket, a);
                     if ((socket != SOCKET_ERROR) && _sockets[socket].connected)
                         _sockets[socket].connected = false;                                    
                 // +UULOC: <date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>, <direction>,<vertical_acc>,<sensor_used>,<SV_used>,<antenna_status>, <jamming_status>
@@ -198,7 +198,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         &_loc[0].time.tm_mday, &_loc[0].time.tm_mon, &_loc[0].time.tm_year, &_loc[0].time.tm_hour, &_loc[0].time.tm_min, &_loc[0].time.tm_sec,\
                         &_loc[0].latitude, &_loc[0].longitude, &_loc[0].altitutude, &_loc[0].uncertainty, &_loc[0].speed, &_loc[0].direction, &_loc[0].verticalAcc, \
                         &b, &_loc[0].svUsed) == 15) {
-                    TRACE("Parsed UULOC position at index 0\r\n");                                        
+                	printf("Parsed UULOC position at index 0\r\n");
                     _loc[0].sensor = (b==0)? CELL_LAST : (b==1)? CELL_GNSS : (b==2)? CELL_LOCATE : (b==3)? CELL_HYBRID : CELL_LAST;
                     _loc[0].time.tm_mon -= 1;
                     _loc[0].time.tm_wday=0;
@@ -213,7 +213,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         &_loc[CELL_MAX_HYP-1].latitude, &_loc[CELL_MAX_HYP-1].longitude, &_loc[CELL_MAX_HYP-1].altitutude, &_loc[CELL_MAX_HYP-1].uncertainty, &_loc[CELL_MAX_HYP-1].speed, &_loc[CELL_MAX_HYP-1].direction, &_loc[CELL_MAX_HYP-1].verticalAcc, \
                         &_loc[CELL_MAX_HYP-1].svUsed) == 17) {  
                     if (--a>=0){                         
-                        TRACE("Parsed UULOC position at index %d\r\n",a);                    
+                    	printf("Parsed UULOC position at index %d\r\n",a);
                         memcpy(&_loc[a], &_loc[CELL_MAX_HYP-1], sizeof(*_loc)); 
                         _loc[a].sensor = (b==0)? CELL_LAST : (b==1)? CELL_GNSS : (b==2)? CELL_LOCATE : (b==3)? CELL_HYBRID : CELL_LAST;                                       
                         _loc[a].time.tm_mon -= 1;
@@ -228,7 +228,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         &_loc[CELL_MAX_HYP-1].time.tm_mday, &_loc[CELL_MAX_HYP-1].time.tm_mon, &_loc[CELL_MAX_HYP-1].time.tm_year, &_loc[CELL_MAX_HYP-1].time.tm_hour, &_loc[CELL_MAX_HYP-1].time.tm_min, &_loc[CELL_MAX_HYP-1].time.tm_sec,\
                         &_loc[CELL_MAX_HYP-1].latitude, &_loc[CELL_MAX_HYP-1].longitude, &_loc[CELL_MAX_HYP-1].altitutude, &_loc[CELL_MAX_HYP-1].uncertainty) == 13) {                    
                     if (--a>=0){    
-                        TRACE("Parsed UULOC position at index %d\r\n",a);
+                    	printf("Parsed UULOC position at index %d\r\n",a);
                         memcpy(&_loc[a], &_loc[CELL_MAX_HYP-1], sizeof(*_loc));                                        
                         _loc[a].sensor = (b==0)? CELL_LAST : (b==1)? CELL_GNSS : (b==2)? CELL_LOCATE : (b==3)? CELL_HYBRID : CELL_LAST;
                         _loc[a].time.tm_mon -= 1;
@@ -241,7 +241,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                 } else if ((sscanf(cmd, "UUHTTPCR: %d,%d,%d", &a, &b, &c) == 3)) {
                     _httpProfiles[a].cmd = b;          //command
                     _httpProfiles[a].result = c;       //result
-                    TRACE("%s for profile %d: result code is %d\r\n", getHTTPcmd(b), a, c);
+                    printf("%s for profile %d: result code is %d\r\n", getHTTPcmd(b), a, c);
                 }
                 if (_dev.dev == DEV_LISA_C2) {
                     // CDMA Specific -------------------------------------------
@@ -867,8 +867,11 @@ int MDMParser::_cbCGDCONT(int type, const char* buf, int len, int* cid)
     return WAIT;
 }
 
-MDMParser::IP MDMParser::join(const char* apn /*= NULL*/, const char* username /*= NULL*/, 
-                              const char* password /*= NULL*/, Auth auth /*= AUTH_DETECT*/)
+MDMParser::IP MDMParser::join(
+		const char* apn      /*= NULL*/,
+		const char* username /*= NULL*/,
+        const char* password /*= NULL*/,
+		Auth auth            /*= AUTH_DETECT*/)
 {
     LOCK();
     INFO("Modem::join\r\n");
@@ -920,13 +923,13 @@ MDMParser::IP MDMParser::join(const char* apn /*= NULL*/, const char* username /
                 username = username ? username : "";
                 password = password ? password : "";
                 auth = (*username && *password) ? auth : AUTH_NONE;
-                TRACE("Testing APN Settings(\"%s\",\"%s\",\"%s\",%d)\r\n", apn, username, password, auth);
+                printf("Testing APN Settings(\"%s\",\"%s\",\"%s\",%d)\r\n", apn, username, password, auth);
                 if ((_dev.dev != DEV_TOBY_L2) && (_dev.dev != DEV_MPCI_L2))
                     ok = _activateProfile(apn, username, password, auth);
                 else {
                     ok = _activateProfileReuseExternal();
                     if (ok) 
-                        TRACE("Reusing External Context\r\n");
+                    	printf("Reusing External Context\r\n");
                     else
                         ok = _activateProfileByCid(1, apn, username, password, auth);
                 }
@@ -1072,7 +1075,7 @@ int MDMParser::socketSocket(IpProtocol ipproto, int port)
         int handle = SOCKET_ERROR;
         if ((RESP_OK == waitFinalResp(_cbUSOCR, &handle)) && 
             (handle != SOCKET_ERROR)) {
-            TRACE("Socket %d: handle %d was created\r\n", socket, handle);
+        	printf("Socket %d: handle %d was created\r\n", socket, handle);
             _sockets[socket].handle     = handle;
             _sockets[socket].timeout_ms = TIMEOUT_BLOCKING;
             _sockets[socket].connected  = false;
@@ -1094,7 +1097,7 @@ bool MDMParser::socketConnect(int socket, const char * host, int port)
     bool ok = false; 
     LOCK();
     if (ISSOCKET(socket) && (!_sockets[socket].connected)) {
-        TRACE("socketConnect(%d,%s,%d)\r\n", socket,host,port);
+    	printf("socketConnect(%d,%s,%d)\r\n", socket,host,port);
         sendFormated("AT+USOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
         if (RESP_OK == waitFinalResp())
             ok = _sockets[socket].connected = true;
@@ -1108,7 +1111,7 @@ bool MDMParser::socketIsConnected(int socket)
     bool ok = false;
     LOCK();
     ok = ISSOCKET(socket) && _sockets[socket].connected;
-    TRACE("socketIsConnected(%d) %s\r\n", socket, ok?"yes":"no");
+    printf("socketIsConnected(%d) %s\r\n", socket, ok?"yes":"no");
     UNLOCK();
     return ok;
 }
@@ -1117,7 +1120,7 @@ bool MDMParser::socketSetBlocking(int socket, int timeout_ms)
 {
     bool ok = false;
     LOCK();
-    TRACE("socketSetBlocking(%d,%d)\r\n", socket,timeout_ms);
+    printf("socketSetBlocking(%d,%d)\r\n", socket,timeout_ms);
     if (ISSOCKET(socket)) {
         _sockets[socket].timeout_ms = timeout_ms;
         ok = true;
@@ -1131,7 +1134,7 @@ bool  MDMParser::socketClose(int socket)
     bool ok = false;
     LOCK();
     if (ISSOCKET(socket) && _sockets[socket].connected) {
-        TRACE("socketClose(%d)\r\n", socket);
+    	printf("socketClose(%d)\r\n", socket);
         sendFormated("AT+USOCL=%d\r\n", _sockets[socket].handle);
         if (RESP_OK == waitFinalResp()) {
             _sockets[socket].connected = false;
@@ -1149,7 +1152,7 @@ bool  MDMParser::socketFree(int socket)
     bool ok = true;
     LOCK();
     if (ISSOCKET(socket)) {
-        TRACE("socketFree(%d)\r\n",  socket);
+    	printf("socketFree(%d)\r\n",  socket);
         _sockets[socket].handle     = SOCKET_ERROR;
         _sockets[socket].timeout_ms = TIMEOUT_BLOCKING;
         _sockets[socket].connected  = false;
@@ -1164,7 +1167,7 @@ bool  MDMParser::socketFree(int socket)
 
 int MDMParser::socketSend(int socket, const char * buf, int len)
 {
-    TRACE("socketSend(%d,,%d)\r\n", socket,len);
+	printf("socketSend(%d,,%d)\r\n", socket,len);
     int cnt = len;
     while (cnt > 0) {
         int blk = USO_MAX_WRITE;
@@ -1192,7 +1195,7 @@ int MDMParser::socketSend(int socket, const char * buf, int len)
 
 int MDMParser::socketSendTo(int socket, IP ip, int port, const char * buf, int len)
 {
-    TRACE("socketSendTo(%d," IPSTR ",%d,,%d)\r\n", socket,IPNUM(ip),port,len);
+	printf("socketSendTo(%d," IPSTR ",%d,,%d)\r\n", socket,IPNUM(ip),port,len);
     int cnt = len;
     while (cnt > 0) {
         int blk = USO_MAX_WRITE;
@@ -1223,7 +1226,7 @@ int MDMParser::socketReadable(int socket)
     int pending = SOCKET_ERROR;
     LOCK();
     if (ISSOCKET(socket) && _sockets[socket].connected) {
-        TRACE("socketReadable(%d)\r\n", socket);
+    	printf("socketReadable(%d)\r\n", socket);
         // allow to receive unsolicited commands 
         waitFinalResp(NULL, NULL, 0);
         if (_sockets[socket].connected)
@@ -1248,7 +1251,7 @@ int MDMParser::_cbUSORD(int type, const char* buf, int len, char* out)
 int MDMParser::socketRecv(int socket, char* buf, int len)
 {
     int cnt = 0;
-    TRACE("socketRecv(%d,,%d)\r\n", socket, len);
+    printf("socketRecv(%d,,%d)\r\n", socket, len);
 #ifdef MDM_DEBUG
     memset(buf, '\0', len);
 #endif
@@ -1285,11 +1288,11 @@ int MDMParser::socketRecv(int socket, char* buf, int len)
         }
         UNLOCK();
         if (!ok) {
-            TRACE("socketRecv: ERROR\r\n");
+        	printf("socketRecv: ERROR\r\n");
             return SOCKET_ERROR;
         }
     }
-    TRACE("socketRecv: %d \"%*s\"\r\n", cnt, cnt, buf-cnt);
+    printf("socketRecv: %d \"%*s\"\r\n", cnt, cnt, buf-cnt);
     return cnt;
 }
 
@@ -1311,7 +1314,7 @@ int MDMParser::_cbUSORF(int type, const char* buf, int len, USORFparam* param)
 int MDMParser::socketRecvFrom(int socket, IP* ip, int* port, char* buf, int len)
 {
     int cnt = 0;
-    TRACE("socketRecvFrom(%d,,%d)\r\n", socket, len);
+    printf("socketRecvFrom(%d,,%d)\r\n", socket, len);
 #ifdef MDM_DEBUG
     memset(buf, '\0', len);
 #endif
@@ -1348,13 +1351,13 @@ int MDMParser::socketRecvFrom(int socket, IP* ip, int* port, char* buf, int len)
         }
         UNLOCK();
         if (!ok) {
-            TRACE("socketRecv: ERROR\r\n");
+        	printf("socketRecv: ERROR\r\n");
             return SOCKET_ERROR;
         }
     }
     timer.stop();
     timer.reset();
-    TRACE("socketRecv: %d \"%*s\"\r\n", cnt, cnt, buf-cnt);
+    printf("socketRecv: %d \"%*s\"\r\n", cnt, cnt, buf-cnt);
     return cnt;
 }
 
@@ -1381,7 +1384,7 @@ int MDMParser::httpFindProfile()
     LOCK();
     // find a free HTTP profile 
     profile = _findProfile();
-    TRACE("httpFindProfile: profile is %d\r\n", profile);
+    printf("httpFindProfile: profile is %d\r\n", profile);
     if (profile != HTTP_PROF_ERROR) {
         _httpProfiles[profile].handle     = 1;
         _httpProfiles[profile].timeout_ms = TIMEOUT_BLOCKING;
@@ -1405,7 +1408,7 @@ bool MDMParser::httpSetBlocking(int profile, int timeout_ms)
 {
     bool ok = false;
     LOCK();
-    TRACE("httpSetBlocking(%d,%d)\r\n", profile, timeout_ms);
+    printf("httpSetBlocking(%d,%d)\r\n", profile, timeout_ms);
     if (ISPROFILE(profile)) {
         _httpProfiles[profile].timeout_ms = timeout_ms;
         ok = true;
@@ -1418,7 +1421,7 @@ bool MDMParser::httpSetProfileForCmdMng(int profile)
 {
     bool ok = false;
     LOCK();
-    TRACE("httpSetProfileForCmdMng(%d)\r\n", profile);
+    printf("httpSetProfileForCmdMng(%d)\r\n", profile);
     if (ISPROFILE(profile)) {
         _httpProfiles[profile].pending = true;
         _httpProfiles[profile].result = -1;
@@ -1433,7 +1436,7 @@ bool MDMParser::httpFreeProfile(int profile)
     bool ok = true;
     LOCK();
     if (ISPROFILE(profile)) {
-        TRACE("httpFreeProfile(%d)\r\n", profile);
+    	printf("httpFreeProfile(%d)\r\n", profile);
         _httpProfiles[profile].handle     = HTTP_PROF_ERROR;
         _httpProfiles[profile].timeout_ms = TIMEOUT_BLOCKING;
         _httpProfiles[profile].pending    = false;
@@ -1450,7 +1453,7 @@ bool MDMParser::httpResetProfile(int httpProfile)
     bool ok = false;
     
     LOCK();
-    TRACE("httpResetProfile(%d)\r\n", httpProfile);
+    printf("httpResetProfile(%d)\r\n", httpProfile);
     sendFormated("AT+UHTTP=%d\r\n", httpProfile);
     if (RESP_OK == waitFinalResp())
         ok = true;
@@ -1466,7 +1469,7 @@ bool MDMParser::httpSetPar(int httpProfile, HttpOpCode httpOpCode, const char * 
     int httpInParNum = 0;
     
     LOCK();
-    TRACE("httpSetPar(%d,%d,\"%s\")\r\n", httpProfile, httpOpCode, httpInPar);
+    printf("httpSetPar(%d,%d,\"%s\")\r\n", httpProfile, httpOpCode, httpInPar);
     switch(httpOpCode){
         case HTTP_IP_ADDRESS:   //0
             ip = gethostbyname(httpInPar);
@@ -1502,13 +1505,13 @@ bool MDMParser::httpSetPar(int httpProfile, HttpOpCode httpOpCode, const char * 
                 if (RESP_OK == waitFinalResp())
                     ok = true;
             } else {
-                TRACE("httpSetPar: HTTP secure option not supported by module\r\n");
+            	printf("httpSetPar: HTTP secure option not supported by module\r\n");
                 ok = false;
             }
             break;
             
         default:
-            TRACE("httpSetPar: unknown httpOpCode %s\r\n", httpOpCode);
+        	printf("httpSetPar: unknown httpOpCode %s\r\n", httpOpCode);
             ok = false; 
             break;   
     }
@@ -1524,7 +1527,7 @@ bool MDMParser::httpCommand(int httpProfile, HttpCmd httpCmdCode, const char* ht
     memset(buf, '\0', len);
 #endif
     LOCK();
-    TRACE("%s\r\n", getHTTPcmd(httpCmdCode));
+    printf("%s\r\n", getHTTPcmd(httpCmdCode));
     switch (httpCmdCode) 
     {   
         case HTTP_HEAD:
@@ -1563,7 +1566,7 @@ bool MDMParser::httpCommand(int httpProfile, HttpCmd httpCmdCode, const char* ht
                     sendFormated("AT+UHTTPC=%d,%d,\"%s\",\"%s\",\"%s\",%d\r\n", \
                                   httpProfile, HTTP_POST_FILE, httpPath, httpOut, httpIn, httpContentType);
                 } else {
-                    TRACE("httpCommand: command not supported by module");
+                	printf("httpCommand: command not supported by module");
                     return ok;  //error
                 }
             }
@@ -1587,14 +1590,14 @@ bool MDMParser::httpCommand(int httpProfile, HttpCmd httpCmdCode, const char* ht
                     sendFormated("AT+UHTTPC=%d,%d,\"%s\",\"%s\",\"%s\",%d\r\n", \
                                   httpProfile, HTTP_POST_DATA, httpPath, httpOut, httpIn, httpContentType);
                 } else {
-                    TRACE("httpCommand: command not supported by module");
+                	printf("httpCommand: command not supported by module");
                     return ok;  //error
                 }
             }    
             break;
             
         default:
-            TRACE("HTTP command not recognized\r\n");
+        	printf("HTTP command not recognized\r\n");
             return ok;  //error
     }
     
@@ -1615,12 +1618,12 @@ bool MDMParser::httpCommand(int httpProfile, HttpCmd httpCmdCode, const char* ht
                     //HTTP command successfully executed
                     if(_dev.dev != DEV_LISA_C2)
                     {
-                        TRACE("httpCommand: reading files with a dimension " \
+                    	printf("httpCommand: reading files with a dimension " \
                               "also greater than MAX_SIZE bytes\r\n");
                         if(readFileNew(httpOut,buf,len) >=0 )
                             ok = true;
                     } else {
-                        TRACE("httpCommand: reading files with a dimension " \
+                    	printf("httpCommand: reading files with a dimension " \
                               "less than MAX_SIZE bytes, otherwise error\r\n");
                         if(readFile(httpOut,buf,len) >=0 )
                             ok = true;
@@ -1633,11 +1636,11 @@ bool MDMParser::httpCommand(int httpProfile, HttpCmd httpCmdCode, const char* ht
                 ok = (WAIT == waitFinalResp(NULL,NULL,0)); // wait for URCs
             } else  {
                 //not received unsolicited and expired timer
-                TRACE("httpCommand: not received unsolicited and expired timer\r\n");
+            	printf("httpCommand: not received unsolicited and expired timer\r\n");
                 ok = false;
             }
             if (!ok) {
-                TRACE("%s: ERROR\r\n", getHTTPcmd(httpCmdCode));
+            	printf("%s: ERROR\r\n", getHTTPcmd(httpCmdCode));
                 _httpProfiles[httpProfile].pending = false;  //no more while loops
             }
         }
@@ -1852,10 +1855,10 @@ int MDMParser::readFileNew(const char* filename, char* buf, int len)
     {
         //retrieve information about the file, in particular its size
         int filesize = infoFile(filename);
-        TRACE("readFileNew: filename is %s; filesize is %d\r\n", filename, filesize);
+        printf("readFileNew: filename is %s; filesize is %d\r\n", filename, filesize);
         
         if (len < filesize)
-            TRACE("readFileNew: WARNING. Buffer dimension is %d bytes," \
+        	printf("readFileNew: WARNING. Buffer dimension is %d bytes," \
                   "while file size is %d bytes\r\n", len, filesize);
         
         if (filesize > 0)
@@ -1893,7 +1896,7 @@ int MDMParser::readFileNew(const char* filename, char* buf, int len)
                 UNLOCK();
                 
                 if (!ok) {
-                    TRACE("readFileNew: ERROR\r\n");
+                	printf("readFileNew: ERROR\r\n");
                     return countBytes;  //in this case countBytes is -1
                 }
             }
@@ -1902,7 +1905,7 @@ int MDMParser::readFileNew(const char* filename, char* buf, int len)
             return countBytes;
         }
     } else {
-        TRACE("httpCommand: command not supported by module"); 
+    	printf("httpCommand: command not supported by module");
     }
     return countBytes;  //it could be 0 or -1 (possible error)    
 }
@@ -1929,7 +1932,7 @@ int MDMParser::infoFile(const char* filename)
     LOCK();
     sendFormated("AT+ULSTFILE=2,\"%s\"\r\n", filename);
     if (RESP_OK != waitFinalResp(_cbULSTFILE, &infoFile))
-        infoFile = -1;  //error condition    
+        infoFile = -1;  //error condition
     UNLOCK();
     
     return infoFile;

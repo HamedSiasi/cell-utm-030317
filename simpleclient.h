@@ -117,7 +117,8 @@ public:
 
     	// Randomizing listening port for Certificate mode connectivity
     	_server_address = server_address;
-    	uint16_t port = rand() % 65535 + 12345;
+    	//uint16_t port = rand() % 65535 + 12345;
+    	uint16_t port = 5684;
 
     	// create mDS interface object, this is the base object everything else attaches to
     	_interface = M2MInterfaceFactory::create_interface(*this,
@@ -234,11 +235,11 @@ public:
     void test_register(M2MSecurity *register_object, M2MObjectList object_list){
         if(_interface) {
             // Register function
-        	printf("a1\r\n");
+        	//printf("a1\r\n");
         	_interface->register_object(register_object, object_list);
 
         }
-        printf("a2\r\n");
+        //printf("a2\r\n");
     }
 
 

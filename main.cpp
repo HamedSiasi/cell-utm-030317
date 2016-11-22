@@ -19,6 +19,7 @@
 
 //#define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
 #define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684"
+//#define MBED_SERVER_ADDRESS "coaps://[2607:f0d0:2601:52::20]:5684"
 #define CELLULAR_NETWORK 1
 
 
@@ -116,7 +117,8 @@ int main() {
 
 #ifdef CELLULAR_NETWORK
     printf("Using Cellular Network\r\n\n");
-    wait_ms(2000);
+    wait_ms(1000);
+
     CellInterface cell;
     connect_success = cell.connect(APN, USERNAME, PASSWORD);
     network_interface = &cell;
@@ -128,8 +130,6 @@ int main() {
     else{
     	printf("Connected to Cellular Network successfully\r\n");
     }
-
-
 
 #else
     printf("Using Ethernet\r\n");
@@ -180,14 +180,16 @@ int main() {
 
 
     printf("Register Done!\r\n");
+
+
     while (true)
     {
-    	wait_ms(10000);
+    	wait_ms(25000);
         mbed_client.test_update_register();
-        printf("Register update \r\n");
+        //printf("Register update \r\n");
     }
+
     mbed_client.test_unregister();
-    //status_ticker.detach();
 }
 
 //#include "mbed.h"

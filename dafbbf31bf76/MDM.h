@@ -120,24 +120,18 @@ public:
         \param auth is the authentication mode (CHAP,PAP,NONE or DETECT)
         \return true if successful, false otherwise
     */
-    bool connect(
-    		const char* simpin = NULL,
-            const char* apn = NULL,
-			const char* username = NULL,
-            const char* password = NULL,
-			Auth auth = AUTH_DETECT,
+    bool connect(const char* simpin = NULL,
+            const char* apn = NULL, const char* username = NULL,
+            const char* password = NULL, Auth auth = AUTH_DETECT,
             PinName pn MDM_IF( = MDMPWRON, = D4));    
-
 
     /** register (Attach) the MT to the GPRS service. 
         \param simpin a optional pin of the SIM card
         \param status an optional struture to with device information 
         \return true if successful, false otherwise
     */
-    virtual bool init(
-    		const char* simpin = NULL,
-			DevStatus* status = NULL,
-            PinName pn MDM_IF( = MDMPWRON, = D4));
+    virtual bool init(const char* simpin = NULL, DevStatus* status = NULL,
+                PinName pn MDM_IF( = MDMPWRON, = D4));
 
     /** get the current device status
         \param strocture holding the device information. 
@@ -210,7 +204,6 @@ public:
     */
     int socketSocket(IpProtocol ipproto, int port = -1);
     
-
     /** make a socket connection
         \param socket the socket handle
         \param host the domain name to connect e.g. "u-blox.com"
@@ -219,14 +212,12 @@ public:
     */
     bool socketConnect(int socket, const char* host, int port);
         
-
     /** make a socket connection
         \param socket the socket handle
         \return true if connected, false otherwise
     */
     bool socketIsConnected(int socket);
      
-
     /** Get the number of bytes pending for reading for this socket
         \param socket the socket handle
         \param timeout_ms -1 blocking, else non blocking timeout in ms
@@ -492,7 +483,7 @@ public:
          \timeout       Timeout period in seconds (1 - 999)
          \accuracy      Target accuracy in meters (1 - 999999)
          \type
-         \hypotesis  Maximum desired number of responses from CellLocateÂ® (up to 16)
+         \hypotesis  Maximum desired number of responses from CellLocate® (up to 16)
      */
     int cellLocRequest(CellSensType sensor, int timeout, int accuracy, CellRespType type = CELL_DETAILED,int hypotesis = 1);
 

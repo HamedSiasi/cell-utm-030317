@@ -84,35 +84,42 @@ class CellNet : public NetworkStack{
 	    	printf("---> get_ip_address \r\n");
 	    	return (const char *)pMdm->getIpAddress();
 	    }
+
+
 	    virtual int gethostbyname(SocketAddress *address, const char *host)
 	    {
 	    	printf("---> gethostbyname :%s\r\n", host);
 	    	//IP ip = pMdm->gethostbyname(host);
 	    	//printf("%lu \r\n", (unsigned long)ip);
-
-
-	    	nsapi_addr_t my;
-//	    	uint8_t d[4];
-//	    	inttolitend(ip,d); 169.45.82.18 nsapi_version_t
-	    	my.bytes[0]=169;
-	    	my.bytes[1]=45;
-	    	my.bytes[2]=82;
-	    	my.bytes[3]=18;
-	    	my.version = NSAPI_IPv4;
-
-
-	        address->set_addr( my );
+//
+//
+//	    	nsapi_addr_t my;
+////	    	uint8_t d[4];
+////	    	inttolitend(ip,d); 169.45.82.18 nsapi_version_t
+//	    	my.bytes[0]=169;
+//	    	my.bytes[1]=45;
+//	    	my.bytes[2]=82;
+//	    	my.bytes[3]=18;
+//	    	my.version = NSAPI_IPv4;
+//
+//
+//	        address->set_addr( my );
 	        return 0;
 	    }
+
+
+
 	    virtual int setstackopt(int level, int optname, const void *optval, unsigned optlen)
 	    {
 	    	printf("---> setstackopt \r\n");
-	    	return (int)true;
+	    	return (int)0;
 	    }
+
+
 	    virtual int getstackopt(int level, int optname, void *optval, unsigned *optlen)
 	    {
 	    	printf("---> getstackopt \r\n");
-	    	return (int)true;
+	    	return (int)0;
 	    }
 
 	protected:
@@ -130,7 +137,8 @@ class CellNet : public NetworkStack{
 	    	myip = pMdm->gethostbyname("api.connector.mbed.com");
 
 	    	bool result = pMdm->socketConnect( (int)mysocket, "api.connector.mbed.com", 5684);
-	    	printf("result:%d\r\n", (int)result);
+
+	    	//printf("result:%d\r\n", (int)result);
 
 	    	return (int)0;
 	    }
@@ -151,38 +159,45 @@ class CellNet : public NetworkStack{
 	    virtual int socket_listen(nsapi_socket_t handle, int backlog)
 	    {
 	    	printf("---> socket_listen \r\n");
-	    	return (int)true;
+	    	return (int)0;
 	    }
+
 	    virtual int socket_connect(nsapi_socket_t handle, const SocketAddress &address)
 	    {
-	    	printf("---> socket_connect \r\n");
-	    	pMdm->socketConnect( (int) mysocket, (const char*) "coap://api.connector.mbed.com", 5684);
+	    	printf("----------------------------------> socket_connect \r\n");
+	    	pMdm->socketConnect( (int) mysocket, (const char*)"coap://api.connector.mbed.com", 5684);
+	    	//pMdm->socketConnect( (int) mysocket, (const char*)"coap.me", 5683);
 	    	return (int)true;
 	    }
+
 	    virtual int socket_accept(nsapi_socket_t *handle, nsapi_socket_t server)
 	    {
 	    	printf("---> socket_accept \r\n");
-	    	return (int)true;
+	    	return (int)0;
 	    }
+
 	    virtual int socket_send(nsapi_socket_t handle, const void *data, unsigned size)
 	    {
 	    	printf("---> socket_send \r\n");
 	    	return (int) pMdm->socketSend( (int) mysocket, (const char *) data, (int) size);
 	    }
+
 	    virtual int socket_recv(nsapi_socket_t handle, void *data, unsigned size)
 	    {
 	    	printf("---> socket_recv \r\n");
 	    	return (int) pMdm->socketRecv( (int) mysocket, (char*) data, (int) size);
 	    }
+
 	    virtual int socket_sendto(nsapi_socket_t handle, const SocketAddress &address, const void *data, unsigned size)
 	    {
-	    	printf("---> socket_sendto \r\n");
+	    	printf("---> socket_sendto size=%d\r\n", (int)size);
 
 	    	int retval=0;
 	    	retval = (pMdm->socketSendTo( (int)mysocket, (IP)myip, (int)5684 ,(const char *)data, (int)size ));
 	    	printf("--->  %d bytes sent\r\n", retval);
 	    	return (int)retval;
 	    }
+
 	    virtual int socket_recvfrom(nsapi_socket_t handle, SocketAddress *address, void *buffer, unsigned size)
 	    {
 	    	printf("---> socket_recvfrom \r\n");
@@ -191,6 +206,7 @@ class CellNet : public NetworkStack{
 	    	*pPort=5684;
 	    	return (int)  pMdm->socketRecvFrom( (int)mysocket, (IP*)myip, (int* )pPort, (char*)buffer, (int)size);
 	    }
+
 	    virtual void socket_attach(nsapi_socket_t handle, void (*callback)(void *), void *data)
 	    {
 	    	printf("---> socket_attach \r\n");

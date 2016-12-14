@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
+//#define debug
+
+#ifndef debug
+
 #include "simpleclient.h"
 #include "mbed.h"
+#include "CellInterface.h"
 
 //#define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
-#define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684"
-//#define MBED_SERVER_ADDRESS "coaps://[2607:f0d0:2601:52::20]:5684"
-#define CELLULAR_NETWORK 1
+//#define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684" //ARM LwM2M server
+//#define MBED_SERVER_ADDRESS "coap://151.9.34.90:5683" //Sgonico CoAP echo server
+
+#define MBED_SERVER_ADDRESS "coap://195.46.10.19:9005" //ARM LwM2M server
 
 
 
-#ifdef CELLULAR_NETWORK
-#include "CellInterface.h"
 #define SIMPIN      NULL
 #define APN         "giffgaff.com"
 #define USERNAME    "giffgaff"
 #define PASSWORD    NULL
-//__attribute__((section("AHBSRAM0")))  CellInterface cell;
-
-#else
-#include "EthernetInterface.h"
-__attribute__((section("AHBSRAM0")))  EthernetInterface eth;
-#endif
 
 
 // no attribute !
@@ -56,7 +54,7 @@ public:
 
     LedResource() {
         // (1) Obj
-        led_object = M2MInterfaceFactory::create_object("111" /*obj name*/);
+        led_object = M2MInterfaceFactory::create_object("1" /*obj name*/);
 
         // (2) Instance
         M2MObjectInstance* led_inst = led_object->create_object_instance();
@@ -87,20 +85,6 @@ public:
     }
 
     void postHandling(void *argument) {
-        // Check if POST contains payload
-//        if (argument) {
-//            M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)argument;
-//            String object_name = param->get_argument_object_name();
-//            uint16_t object_instance_id = param->get_argument_object_instance_id();
-//            String resource_name = param->get_argument_resource_name();
-//            int payload_length = param->get_argument_value_length();
-//            uint8_t* payload = param->get_argument_value();
-//
-//            printf("[POST] Resource: %s/%d/%s executed\r\n", object_name.c_str(), object_instance_id, resource_name.c_str());
-//            printf("[POST] Payload: %.*s\r\n", payload_length, payload);
-//        }else{
-//        	printf("[POST] Received! NO Payload \r\n");
-//        }
         led1 = !led1;
     }
 private:
@@ -111,50 +95,18 @@ private:
 
 int main() {
     NetworkInterface *network_interface = 0;
-    int connect_success = -1;
 
-	// -------------------- Transport layer --------------------
-
-#ifdef CELLULAR_NETWORK
     printf("Using Cellular Network\r\n\n");
-    wait_ms(1000);
+    wait_ms(2000);
 
     CellInterface cell;
-    connect_success = cell.connect(APN, USERNAME, PASSWORD);
+    cell.connect(APN, USERNAME, PASSWORD);
     network_interface = &cell;
-
-    if (!connect_success){
-    	printf("Connection to Cellular Network Failed! Exiting application....\r\n");
-    	return 0;
-    }
-    else{
-    	printf("Connected to Cellular Network successfully\r\n");
-    }
-
-#else
-    printf("Using Ethernet\r\n");
-    connect_success = eth.connect();
-    network_interface = &eth;
-    if(connect_success == 0){
-    	printf("Connected to Network successfully\r\n");
-    }
-    else{
-        printf("Connection to Network Failed %d! Exiting application....\r\n", connect_success);
-        return 0;
-    }
-    const char *ip_addr = network_interface->get_ip_address();
-    if (ip_addr){
-        printf("IP address %s\r\n", ip_addr);
-    }
-    else{
-        printf("No IP address\r\n");
-    }
-#endif
 
 
     // -------------------- CoAP + LwM2M --------------------
 
-    //LedResource led_resource;
+    LedResource led_resource;
 
     mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
 
@@ -168,7 +120,7 @@ int main() {
 
 
     object_list.push_back(device_object);
-    //object_list.push_back(led_resource.get_object());
+    object_list.push_back(led_resource.get_object());
 
 
     // Set endpoint registration object
@@ -179,18 +131,22 @@ int main() {
     mbed_client.test_register(register_object, object_list);
 
 
-    printf("Register Done!\r\n");
+    printf("Register Done !\r\n\n\n");
 
 
     while (true)
     {
-    	wait_ms(25000);
-        mbed_client.test_update_register();
-        //printf("Register update \r\n");
+    	wait_ms(60000);
+    	mbed_client.test_update_register();
+        printf("Register update \r\n");
     }
 
     mbed_client.test_unregister();
 }
+
+
+
+
 
 //#include "mbed.h"
 //
@@ -205,3 +161,71 @@ int main() {
 //        wait(0.2);
 //    }
 //}
+
+#else
+
+#include "mbed.h"
+#include "GPS.h"
+#include "MDM.h"
+
+#define SIMPIN      NULL
+#define APN         "giffgaff.com"
+#define USERNAME    "giffgaff"
+#define PASSWORD    NULL
+
+int main(void)
+{
+    int ret;
+    char buf[512] = "";
+
+    // Create the modem object
+    MDMSerial mdm; // use mdm(D1,D0) if you connect the cellular shield to a C027
+    mdm.setDebug(4); // enable this for debugging issues
+
+    // initialize the modem
+    MDMParser::DevStatus devStatus = {};
+    MDMParser::NetStatus netStatus = {};
+    bool mdmOk = mdm.init(SIMPIN, &devStatus);
+    mdm.dumpDevStatus(&devStatus);
+    if (mdmOk) {
+        // wait until we are connected
+        mdmOk = mdm.registerNet(&netStatus);
+        mdm.dumpNetStatus(&netStatus);
+    }
+    if (mdmOk)
+    {
+        // join the internet connection
+        MDMParser::IP ip = mdm.join(APN,USERNAME,PASSWORD);
+        if (ip == NOIP)
+            printf("Not able to join network");
+        else
+        {
+            mdm.dumpIp(ip);
+            int port = 5683;
+            const char* host = "ciot.it-sgn.u-blox.com";
+            MDMParser::IP ip = mdm.gethostbyname(host);
+            char data[] = "UDP SOCKET TEST";
+
+                    printf("Testing UDP sockets with ECHO server\r\n");
+                    int socket = mdm.socketSocket(MDMParser::IPPROTO_UDP, port);
+                    if (socket >= 0)
+                    {
+                        mdm.socketSetBlocking(socket, 10000);
+                        ret = mdm.socketSendTo(socket, ip, port, data, sizeof(data)-1);
+                        if (ret == sizeof(data)-1) {
+                            printf("Socket SendTo %s:%d " IPSTR " %d \"%s\"\r\n", host, port, IPNUM(ip), ret, data);
+                        }
+                        ret = mdm.socketRecvFrom(socket, &ip, &port, buf, sizeof(buf)-1);
+                        if (ret >= 0) {
+                            printf("Socket RecvFrom " IPSTR ":%d %d \"%.*s\" \r\n", IPNUM(ip),port, ret, ret,buf);
+                        }
+                        mdm.socketFree(socket);
+                    }
+            // disconnect
+            mdm.disconnect();
+        }
+    }
+    mdm.powerOff();
+    return 0;
+}
+#endif

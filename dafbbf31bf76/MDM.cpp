@@ -198,7 +198,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         &_loc[0].time.tm_mday, &_loc[0].time.tm_mon, &_loc[0].time.tm_year, &_loc[0].time.tm_hour, &_loc[0].time.tm_min, &_loc[0].time.tm_sec,\
                         &_loc[0].latitude, &_loc[0].longitude, &_loc[0].altitutude, &_loc[0].uncertainty, &_loc[0].speed, &_loc[0].direction, &_loc[0].verticalAcc, \
                         &b, &_loc[0].svUsed) == 15) {
-                    TRACE("Parsed UULOC position at index 0\r\n");
+                    TRACE("Parsed UULOC position at index 0\r\n");                                        
                     _loc[0].sensor = (b==0)? CELL_LAST : (b==1)? CELL_GNSS : (b==2)? CELL_LOCATE : (b==3)? CELL_HYBRID : CELL_LAST;
                     _loc[0].time.tm_mon -= 1;
                     _loc[0].time.tm_wday=0;
@@ -213,7 +213,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         &_loc[CELL_MAX_HYP-1].latitude, &_loc[CELL_MAX_HYP-1].longitude, &_loc[CELL_MAX_HYP-1].altitutude, &_loc[CELL_MAX_HYP-1].uncertainty, &_loc[CELL_MAX_HYP-1].speed, &_loc[CELL_MAX_HYP-1].direction, &_loc[CELL_MAX_HYP-1].verticalAcc, \
                         &_loc[CELL_MAX_HYP-1].svUsed) == 17) {  
                     if (--a>=0){                         
-                        TRACE("Parsed UULOC position at index %d\r\n",a);
+                        TRACE("Parsed UULOC position at index %d\r\n",a);                    
                         memcpy(&_loc[a], &_loc[CELL_MAX_HYP-1], sizeof(*_loc)); 
                         _loc[a].sensor = (b==0)? CELL_LAST : (b==1)? CELL_GNSS : (b==2)? CELL_LOCATE : (b==3)? CELL_HYBRID : CELL_LAST;                                       
                         _loc[a].time.tm_mon -= 1;
@@ -347,7 +347,7 @@ int MDMParser::_cbInt(int type, const char* buf, int len, int* val)
 
 bool MDMParser::connect(
             const char* simpin, 
-            const char* apn, const char* username,
+            const char* apn, const char* username, 
             const char* password, Auth auth,
             PinName pn)
 {
@@ -864,7 +864,7 @@ int MDMParser::_cbCGDCONT(int type, const char* buf, int len, int* cid)
     return WAIT;
 }
 
-MDMParser::IP MDMParser::join(const char* apn /*= NULL*/, const char* username /*= NULL*/,
+MDMParser::IP MDMParser::join(const char* apn /*= NULL*/, const char* username /*= NULL*/, 
                               const char* password /*= NULL*/, Auth auth /*= AUTH_DETECT*/)
 {
     LOCK();
@@ -1189,14 +1189,17 @@ int MDMParser::socketSendTo(int socket, IP ip, int port, const char * buf, int l
     TRACE("socketSendTo(%d," IPSTR ",%d,,%d)\r\n", socket,IPNUM(ip),port,len);
     int cnt = len;
     while (cnt > 0) {
-        int blk = USO_MAX_WRITE;
+        int blk = USO_MAX_WRITE/*1024*/;
         if (cnt < blk) 
-            blk = cnt;
+            blk = cnt;//146
+
         bool ok = false;
         LOCK();
         if (ISSOCKET(socket)) {
             sendFormated("AT+USOST=%d,\"" IPSTR "\",%d,%d\r\n",_sockets[socket].handle,IPNUM(ip),port,blk);
-            if (RESP_PROMPT == waitFinalResp()) {
+            //sendFormated("AT+UPING=\"" IPSTR "\"\r\n",IPNUM(ip));
+            if (RESP_PROMPT == waitFinalResp())
+            {
                 wait_ms(50);
                 send(buf, blk);
                 if (RESP_OK == waitFinalResp())
@@ -1883,7 +1886,7 @@ int MDMParser::readFileNew(const char* filename, char* buf, int len)
             return countBytes;
         }
     } else {
-        TRACE("httpCommand: command not supported by module");
+        TRACE("httpCommand: command not supported by module"); 
     }
     return countBytes;  //it could be 0 or -1 (possible error)    
 }
@@ -1910,7 +1913,7 @@ int MDMParser::infoFile(const char* filename)
     LOCK();
     sendFormated("AT+ULSTFILE=2,\"%s\"\r\n", filename);
     if (RESP_OK != waitFinalResp(_cbULSTFILE, &infoFile))
-        infoFile = -1;  //error condition
+        infoFile = -1;  //error condition    
     UNLOCK();
     
     return infoFile;

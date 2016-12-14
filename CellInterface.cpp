@@ -16,35 +16,74 @@
 
 #include "CellInterface.h"
 #include "MDM.h"
-#include "lwip_stack.h"
 #include "network-socket/NetworkInterface.h"
+//#include <string>
+//#include <cstdio>
+//#include <iostream>
 
-typedef uint32_t IP;
-
-__attribute__((section("AHBSRAM0"))) static IP myip;
-__attribute__((section("AHBSRAM0"))) static int mysocket;
+__attribute__((section("AHBSRAM0"))) static MDMParser::IP myip;
+static int mysocket = -1;
 __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 
+#define HOST "195.46.10.19"
+#define PORT 9005
 
-CellInterface::CellInterface(){
-	printf("Cell-Contractor \r\n");
-}
-CellInterface::~CellInterface(){
-	printf("Cell-Decontractor \r\n");
-}
+//#define HOST "ciot.it-sgn.u-blox.com"
+//#define PORT 5683
+
+//#define HOST "api.connector.mbed.com"
+//#define PORT 5684
+
+//#define HOST "echo.u-blox.com"
+//#define PORT 7
+
+//#define HOST "coap.me"
+//#define PORT 5683
+
+
+#define SIMPIN      NULL
+#define APN         "giffgaff.com"
+#define USERNAME    "giffgaff"
+#define PASSWORD    NULL
 
 int CellInterface::connect(
-		const char *apn       /* = 0 */,
-		const char *username  /* = 0 */,
-		const char *password  /* = 0 */)
+		const char *apn          /* = 0 */,
+		const char *username     /* = 0 */,
+		const char *password     /* = 0 */)
 {
 	printf("Cell-connect \r\n");
-	pMdm = new MDMSerial();
+	pMdm = new MDMSerial();        // use mdm(D1,D0) if you connect the cellular shield to a C027
+	pMdm->setDebug(4);             // enable this for debugging issues
 
-	if (pMdm != NULL) {
-		pMdm->setDebug(4);
-		return (int) pMdm->connect(NULL, apn, username, password);
+	// initialize the modem
+	MDMParser::DevStatus devStatus = {};
+	MDMParser::NetStatus netStatus = {};
+	bool mdmOk = pMdm->init(SIMPIN, &devStatus);
+	pMdm->dumpDevStatus(&devStatus);
+	if (mdmOk) {
+	        // wait until we are connected
+	        mdmOk = pMdm->registerNet(&netStatus);
+	        pMdm->dumpNetStatus(&netStatus);
 	}
+	if (mdmOk)
+	{
+	        // join the internet connection
+	        MDMParser::IP ip = pMdm->join(APN,USERNAME,PASSWORD);
+	        if (ip == NOIP){
+	            printf("Not able to join network \r\n");
+	        }
+	        else
+	        {
+	        	pMdm->dumpIp(ip);
+	            myip = pMdm->gethostbyname(HOST);
+	        }
+	}
+//	pMdm = new MDMSerial();
+//
+//	if (pMdm != NULL) {
+//		pMdm->setDebug(4);
+//		return (int) pMdm->connect(NULL, apn, username, password);
+//	}
     return (int)false;
 }
 
@@ -84,132 +123,115 @@ class CellNet : public NetworkStack{
 	    	printf("---> get_ip_address \r\n");
 	    	return (const char *)pMdm->getIpAddress();
 	    }
-
-
 	    virtual int gethostbyname(SocketAddress *address, const char *host)
 	    {
 	    	printf("---> gethostbyname :%s\r\n", host);
-	    	//IP ip = pMdm->gethostbyname(host);
-	    	//printf("%lu \r\n", (unsigned long)ip);
-//
-//
-//	    	nsapi_addr_t my;
-////	    	uint8_t d[4];
-////	    	inttolitend(ip,d); 169.45.82.18 nsapi_version_t
-//	    	my.bytes[0]=169;
-//	    	my.bytes[1]=45;
-//	    	my.bytes[2]=82;
-//	    	my.bytes[3]=18;
-//	    	my.version = NSAPI_IPv4;
-//
-//
-//	        address->set_addr( my );
 	        return 0;
 	    }
-
-
-
 	    virtual int setstackopt(int level, int optname, const void *optval, unsigned optlen)
 	    {
 	    	printf("---> setstackopt \r\n");
-	    	return (int)0;
+	    	return (int)true;
 	    }
-
-
 	    virtual int getstackopt(int level, int optname, void *optval, unsigned *optlen)
 	    {
 	    	printf("---> getstackopt \r\n");
-	    	return (int)0;
+	    	return (int)true;
 	    }
 
 	protected:
-	    friend class Socket;
-	    friend class UDPSocket;
+	    friend class mdmSocket;
+	    friend class mdmUDPSocket;
 
 	    virtual int socket_open(nsapi_socket_t *handle, nsapi_protocol_t proto)
 	    {
-	    	printf("---> socket_open \r\n");
-
-	    	mysocket = pMdm->socketSocket(MDMParser::IPPROTO_UDP);
-
-	    	pMdm->socketSetBlocking(mysocket, 10000);
-
-	    	myip = pMdm->gethostbyname("api.connector.mbed.com");
-
-	    	bool result = pMdm->socketConnect( (int)mysocket, "api.connector.mbed.com", 5684);
-
-	    	//printf("result:%d\r\n", (int)result);
-
+	    	printf("---> socket_open handle:(%d) protocol:(%d) \r\n", (int)handle, (int)proto);
+//
+//	    	static bool status = true;
+//	    	if(status){
+//	    		mysocket = pMdm->socketSocket(MDMParser::IPPROTO_UDP, PORT);
+//	    		pMdm->socketSetBlocking(mysocket, 10000);
+//	    		status=false;
+//	    	}
 	    	return (int)0;
 	    }
 
 	    virtual int socket_close(nsapi_socket_t handle)
 	    {
-	    	printf("---> socket_close \r\n");
+	    	printf("---> socket_close handle:(%d)\r\n", (int)handle);
 	    	pMdm->socketClose( (int)mysocket );
 	    	return (int)0;
 	    }
 
 	    virtual int socket_bind(nsapi_socket_t handle, const SocketAddress &address)
 	    {
-	    	printf("---> socket_bind \r\n");
-	    	return (int)0;
+	    	printf("---> socket_bind handle:(%d)\r\n");
+
+	        if (mysocket < 0) {
+	            mysocket = pMdm->socketSocket(MDMParser::IPPROTO_UDP, PORT);
+	            if (mysocket < 0) {
+	                return -1;
+	            }
+	        }
+	        pMdm->socketSetBlocking(mysocket, 10000);
+	        return 0;
 	    }
 
 	    virtual int socket_listen(nsapi_socket_t handle, int backlog)
 	    {
 	    	printf("---> socket_listen \r\n");
-	    	return (int)0;
-	    }
-
-	    virtual int socket_connect(nsapi_socket_t handle, const SocketAddress &address)
-	    {
-	    	printf("----------------------------------> socket_connect \r\n");
-	    	pMdm->socketConnect( (int) mysocket, (const char*)"coap://api.connector.mbed.com", 5684);
-	    	//pMdm->socketConnect( (int) mysocket, (const char*)"coap.me", 5683);
 	    	return (int)true;
 	    }
-
+	    virtual int socket_connect(nsapi_socket_t handle, const SocketAddress &address)
+	    {
+	    	printf("---> socket_connect \r\n");
+	    	pMdm->socketConnect( (int) mysocket, (const char*) "coap://api.connector.mbed.com", 5684);
+	    	return (int)true;
+	    }
 	    virtual int socket_accept(nsapi_socket_t *handle, nsapi_socket_t server)
 	    {
 	    	printf("---> socket_accept \r\n");
-	    	return (int)0;
+	    	return (int)true;
 	    }
-
 	    virtual int socket_send(nsapi_socket_t handle, const void *data, unsigned size)
 	    {
 	    	printf("---> socket_send \r\n");
 	    	return (int) pMdm->socketSend( (int) mysocket, (const char *) data, (int) size);
 	    }
-
 	    virtual int socket_recv(nsapi_socket_t handle, void *data, unsigned size)
 	    {
 	    	printf("---> socket_recv \r\n");
 	    	return (int) pMdm->socketRecv( (int) mysocket, (char*) data, (int) size);
 	    }
-
 	    virtual int socket_sendto(nsapi_socket_t handle, const SocketAddress &address, const void *data, unsigned size)
 	    {
-	    	printf("---> socket_sendto size=%d\r\n", (int)size);
+	    	int ret;
+	    	printf("\n ---> socket_sendto handle:(%d) size:(%d)\r\n", (int)handle, (int)size);
 
-	    	int retval=0;
-	    	retval = (pMdm->socketSendTo( (int)mysocket, (IP)myip, (int)5684 ,(const char *)data, (int)size ));
-	    	printf("--->  %d bytes sent\r\n", retval);
-	    	return (int)retval;
+	    	//ret = (int) (pMdm->socketSendTo( (int)mysocket, myip, PORT ,  static_cast<const char*>(data)   , (int)size ));
+	    	ret = (int) (pMdm->socketSendTo( (int)mysocket, myip, PORT ,  reinterpret_cast<const char*>(data)   , (int)size ));
+
+
+	    	//ret = (int) (pMdm->socketSendTo( (int)mysocket, myip, PORT ,(char *)data, (int)size ));
+	    	pMdm->socketClose( (int)mysocket );
+	    	return ret;
 	    }
 
 	    virtual int socket_recvfrom(nsapi_socket_t handle, SocketAddress *address, void *buffer, unsigned size)
 	    {
-	    	printf("---> socket_recvfrom \r\n");
+	    	printf("---> socket_recvfrom handle:(%d) size:(%d) \r\n", (int)handle, (int)size);
 
-	    	int* pPort;
-	    	*pPort=5684;
-	    	return (int)  pMdm->socketRecvFrom( (int)mysocket, (IP*)myip, (int* )pPort, (char*)buffer, (int)size);
+	    	MDMParser::IP ip;
+	    	int port;
+	    	return pMdm->socketRecvFrom( mysocket, &ip, &port, (char*)buffer, (int)size );
 	    }
+
+
+
 
 	    virtual void socket_attach(nsapi_socket_t handle, void (*callback)(void *), void *data)
 	    {
-	    	printf("---> socket_attach \r\n");
+	    	printf("---> socket_attach handle:(%d)\r\n", (int)handle);
 	    }
 
 	    virtual int setsockopt(nsapi_socket_t handle, int level, int optname, const void *optval, unsigned optlen)
@@ -226,11 +248,10 @@ class CellNet : public NetworkStack{
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------
 
+static CellNet *cellnet = NULL;
 NetworkStack *CellInterface::get_stack()
 {
 	printf("Cell-get-stack !!! \r\n");
-
-	static CellNet *cellnet = NULL;
 	if(!cellnet){
 		cellnet = new CellNet;
 	}

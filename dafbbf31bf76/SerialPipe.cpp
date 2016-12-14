@@ -32,7 +32,6 @@ int SerialPipe::put(const void* buffer, int length, bool blocking)
 { 
     int count = length;
     const char* ptr = (const char*)buffer;
-
     if (count)
     {
         do

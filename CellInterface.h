@@ -21,13 +21,13 @@
 #include "CellularInterface.h"
 
 
-//class NetworkStack;
+class NetworkStack;
 
 class CellInterface : public CellularInterface
 {
 public:
-	CellInterface();
-	~CellInterface();
+//	CellInterface();
+//	~CellInterface();
 
 	virtual int connect(const char *apn = 0, const char *username = 0, const char *password = 0);
 

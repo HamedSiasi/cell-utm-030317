@@ -31,7 +31,7 @@
 
 
 //Select binding mode: UDP or TCP
-M2MInterface::BindingMode SOCKET_MODE = M2MInterface::UDP;
+M2MInterface::BindingMode SOCKET_MODE = M2MInterface::UDP;//UDP
 
 
 
@@ -114,22 +114,22 @@ public:
     *  Currently only LwIPv4 is supported.
     */
     void create_interface(const char *server_address, void *handler=NULL) {
-
-    	// Randomizing listening port for Certificate mode connectivity
     	_server_address = server_address;
     	//uint16_t port = rand() % 65535 + 12345;
-    	uint16_t port = 5684;
+    	//uint16_t port = 5684;
+    	uint16_t port = 9005;
 
     	// create mDS interface object, this is the base object everything else attaches to
     	_interface = M2MInterfaceFactory::create_interface(*this,
                                                       	  MBED_ENDPOINT_NAME,       // endpoint name string
-														  "ublox",                  // endpoint type string
-														  100,                      // lifetime
+														  "urn:imei",                  // endpoint type string
+														  300,                      // lifetime
 														  port,                     // listen port
 														  MBED_DOMAIN,              // domain string
 														  SOCKET_MODE,              // binding mode
 														  M2MInterface::LwIP_IPv4,  // network stack
-														  "");                      // context address string
+														  "");
+    	// context address string
     	const char *binding_mode = (SOCKET_MODE == M2MInterface::UDP) ? "UDP" : "TCP";
     	printf("\r\nSOCKET_MODE : %s\r\n", binding_mode);
     	printf("Connecting to %s\r\n", server_address);
@@ -216,10 +216,10 @@ public:
         // make sure device object was created successfully
         if(device) {
             // add resourceID's to device objectID/ObjectInstance
-              device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
-//            device->create_resource(M2MDevice::DeviceType,   _device.Type);
-//            device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
-//            device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
+            device->create_resource(M2MDevice::Manufacturer, _device.Manufacturer);
+            device->create_resource(M2MDevice::DeviceType,   _device.Type);
+            //device->create_resource(M2MDevice::ModelNumber,  _device.ModelNumber);
+            //device->create_resource(M2MDevice::SerialNumber, _device.SerialNumber);
         }
         return device;
     }
@@ -235,11 +235,9 @@ public:
     void test_register(M2MSecurity *register_object, M2MObjectList object_list){
         if(_interface) {
             // Register function
-        	//printf("a1\r\n");
         	_interface->register_object(register_object, object_list);
 
         }
-        //printf("a2\r\n");
     }
 
 

@@ -15,28 +15,27 @@
  */
 
 //#define debug
-
 #ifndef debug
 
 #include "simpleclient.h"
 #include "mbed.h"
 #include "CellInterface.h"
 
-//#define MBED_SERVER_ADDRESS "coap://api.connector.mbed.com:5684"
-//#define MBED_SERVER_ADDRESS "coap://169.45.82.18:5684" //ARM LwM2M server
-//#define MBED_SERVER_ADDRESS "coap://151.9.34.90:5683" //Sgonico CoAP echo server
-
-#define MBED_SERVER_ADDRESS "coap://195.46.10.19:9005" //ARM LwM2M server
-
-
-
-#define SIMPIN      NULL
-#define APN         "giffgaff.com"
-#define USERNAME    "giffgaff"
-#define PASSWORD    NULL
+//#define MBED_SERVER_ADDRESS  "coap://api.connector.mbed.com:5684"
+//#define MBED_SERVER_ADDRESS  "coap://169.45.82.18:5684"            // ARM LwM2M server
+//#define MBED_SERVER_ADDRESS  "coap://151.9.34.90:5683"             // Sgonico CoAP echo server
+//#define MBED_SERVER_ADDRESS  "coap://151.9.34.99:8080"             // Junaid Ashraf
+//#define MBED_SERVER_ADDRESS  "coap://195.46.10.19:9005"            // ZELITRON LwM2M server
+#define MBED_SERVER_ADDRESS    "coap://192.168.5.80:9005"            // ZELITRON Server VIP (Load balancer )
 
 
-// no attribute !
+
+#define SIMPIN      NULL                //  NULL
+#define APN         "m2m.zelitron.com"  //  "giffgaff.com"
+#define USERNAME    "web"               //  "giffgaff"
+#define PASSWORD    "web"               //  NULL
+
+
 struct MbedClientDevice device = {
     "Manufacturer_String",      // Manufacturer
     "Type_String",              // Type
@@ -46,103 +45,155 @@ struct MbedClientDevice device = {
 
 
 __attribute__((section("AHBSRAM0"))) MbedClient  mbed_client(device);
-__attribute__((section("AHBSRAM0"))) DigitalOut  led1(LED1);
 
 
-class LedResource {
+class TempResource {
 public:
 
-    LedResource() {
+    TempResource() {
         // (1) Obj
-        led_object = M2MInterfaceFactory::create_object("1" /*obj name*/);
+        temp_object = M2MInterfaceFactory::create_object("3303");
 
         // (2) Instance
-        M2MObjectInstance* led_inst = led_object->create_object_instance();
+        M2MObjectInstance* temp_inst = temp_object->create_object_instance();
 
         // (3) Resouce
-        M2MResource* status_res = led_inst->create_dynamic_resource(
-        		"222"                         /*resource_name*/,
-        		"status"                      /*resource_type*/,
-				M2MResourceInstance::BOOLEAN  /*type*/,
-				true                         /*observable*/
-				                              /*multiple_instance*/);
+        M2MResource* status_res = temp_inst->create_dynamic_resource(
+        		"5700"                                /*resource_name*/,
+        		NULL                                  /*resource_type*/,
+				M2MResourceInstance::STRING           /*type*/,
+				false                                  /*observable*/
+				                                      /*multiple_instance*/);
 
         // (4) Read(GET) and Write(PUT)
-        status_res->set_operation(M2MBase::GET_PUT_POST_DELETE_ALLOWED);
+        status_res->set_operation(M2MBase::GET_ALLOWED);
 
-        // (5) Set the value of the resource
-        status_res->set_value((const uint8_t*)"0"/*value*/, 1/*value_length*/);
+        // (5) Value of the resource
+        status_res->set_value((const uint8_t*)"20.5" /*value*/, (const uint32_t) sizeof("20.5") /*value_length*/);
 
-        // (6) POST comes in, we want to execute the led_execute_callback
-        status_res->set_execute_function( execute_callback(this, &LedResource::postHandling) );
+        // (6) Callback
+        status_res->set_execute_function( execute_callback(this, &TempResource::Handling) );
 
-        // (7) Completion of execute function can take a time, that's why delayed response is used
+        // (7) Delay
         status_res->set_delayed_response(true);
     }
-
     M2MObject* get_object() {
-        return led_object;
+        return temp_object;
     }
-
-    void postHandling(void *argument) {
-        led1 = !led1;
+    void Handling(void *argument) {
+    	printf("Temperature Sensor Handling ! %s \r\n\n\n\n\n\n\n", (char*)argument );
     }
 private:
-    M2MObject* led_object;
+    M2MObject* temp_object;
+};
+
+
+class ServerObj {
+public:
+
+	ServerObj() {
+        // (1) Obj
+        server_object = M2MInterfaceFactory::create_object("1");//3303
+
+        // (2) Instance
+        M2MObjectInstance* server_inst = server_object->create_object_instance();
+
+        // (3) Resouce
+        M2MResource* status_res = server_inst->create_dynamic_resource(
+        		"1"                                /*resource_name*/,//5700
+        		NULL                               /*resource_type*/,
+				M2MResourceInstance::STRING         /*type*/,
+				false                               /*observable*/
+				                                   /*multiple_instance*/);
+        // (4) Read(GET) and Write(PUT)
+        status_res->set_operation(M2MBase::GET_PUT_POST_DELETE_ALLOWED);//GET_ALLOWED
+
+        // (5) Value of the resource
+        status_res->set_value((const uint8_t*)"300" /*value*/, (const uint32_t) sizeof("300") /*value_length*/);//20.5
+
+        // (6) Callback
+        status_res->set_execute_function( execute_callback(this, &ServerObj::Handling) );
+
+        // (7) Delay
+        status_res->set_delayed_response(true);
+    }
+	~ServerObj() {
+	    }
+    M2MObject* get_object() {
+        return server_object;
+    }
+    void Handling(void *argument) {
+
+    	if (argument) {
+    		printf("Handling!\r\n");
+    	    M2MResource::M2MExecuteParameter* param = (M2MResource::M2MExecuteParameter*)argument;
+    	    String    object_name          = param->get_argument_object_name();
+    	    uint16_t  object_instance_id   = param->get_argument_object_instance_id();
+    	    String    resource_name        = param->get_argument_resource_name();
+    	    int       payload_length       = param->get_argument_value_length();
+    	    uint8_t*  payload              = param->get_argument_value();
+
+    	    printf("Resource: %s/%d/%s executed\r\n", object_name.c_str(), object_instance_id, resource_name.c_str());
+    	    printf("Payload: %.*s\r\n\n\n\n", payload_length, payload);
+    	}
+    	else{
+    		printf("Handling! No argument \r\n");
+    	}
+
+    }
+
+private:
+    M2MObject* server_object;
 };
 
 
 
+
+
+
 int main() {
+
     NetworkInterface *network_interface = 0;
-
-    printf("Using Cellular Network\r\n\n");
-    wait_ms(2000);
-
+    wait_ms(3000);
     CellInterface cell;
     cell.connect(APN, USERNAME, PASSWORD);
     network_interface = &cell;
 
-
     // -------------------- CoAP + LwM2M --------------------
 
-    LedResource led_resource;
-
     mbed_client.create_interface(MBED_SERVER_ADDRESS, network_interface);
+    M2MSecurity* securityObject  = mbed_client.create_register_object();
+    M2MDevice*   device_object   = mbed_client.create_device_object();
 
-    M2MSecurity* register_object = mbed_client.create_register_object(); // server object specifying connector info
-    M2MDevice*   device_object   = mbed_client.create_device_object();   // device resources object
-    printf("Create list of Objects to register \r\n");
-
-
+    // OBJECTS LIST:
     M2MObjectList object_list;
-    printf("Add objects to list \r\n");
+    //TempResource temp_resource;
+    ServerObj    server_resource;
 
+    object_list.push_back(device_object);                     // obj 3
+    //object_list.push_back(temp_resource.get_object());        // obj 3303
+    object_list.push_back(server_resource.get_object());
 
-    object_list.push_back(device_object);
-    object_list.push_back(led_resource.get_object());
+    mbed_client.set_register_object(securityObject);
+    mbed_client.test_register(securityObject, object_list);
 
-
-    // Set endpoint registration object
-    mbed_client.set_register_object(register_object);
-
-
-    // Register with mbed Device Connector
-    mbed_client.test_register(register_object, object_list);
-
-
-    printf("Register Done !\r\n\n\n");
-
-
-    while (true)
-    {
-    	wait_ms(60000);
+    while(true){
+    	wait_ms(10000);
     	mbed_client.test_update_register();
-        printf("Register update \r\n");
+    	//printf("Register update \r\n");
     }
-
     mbed_client.test_unregister();
 }
+
+
+
+
+
+
+
+
+
+
 
 
 

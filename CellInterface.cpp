@@ -25,8 +25,14 @@ __attribute__((section("AHBSRAM0"))) static MDMParser::IP myip;
 static int mysocket = -1;
 __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 
-#define HOST "195.46.10.19"
+
+//ZELITRON Server VIP (Load balancer )
+#define HOST "192.168.5.80"
 #define PORT 9005
+
+//ZELITRON
+//#define HOST "195.46.10.19"
+//#define PORT 9005
 
 //#define HOST "ciot.it-sgn.u-blox.com"
 //#define PORT 5683
@@ -41,10 +47,13 @@ __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 //#define PORT 5683
 
 
-#define SIMPIN      NULL
-#define APN         "giffgaff.com"
-#define USERNAME    "giffgaff"
-#define PASSWORD    NULL
+
+#define SIMPIN      NULL                //  NULL
+#define APN         "m2m.zelitron.com"  //  "giffgaff.com"
+#define USERNAME    "web"               //  "giffgaff"
+#define PASSWORD    "web"               //  NULL
+
+
 
 int CellInterface::connect(
 		const char *apn          /* = 0 */,

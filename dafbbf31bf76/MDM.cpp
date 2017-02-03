@@ -379,6 +379,8 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
     memset(&_dev, 0, sizeof(_dev));
     if (pn != NC) {
         INFO("Modem::wakeup\r\n");
+        wait_ms(7000);
+
         DigitalOut pin(pn, 1);
         while (i--) {
             // SARA-U2/LISA-U2 50..80us
@@ -1039,7 +1041,10 @@ int MDMParser::_cbUSOCR(int type, const char* buf, int len, int* handle)
 {
     if ((type == TYPE_PLUS) && handle) {
         // +USOCR: socket
+
         if (sscanf(buf, "\r\n+USOCR: %d", handle) == 1)
+        //if (sscanf(buf, "\r\n+NSOCR: %d", handle) == 1)
+
             /*nothing*/;  
     }
     return WAIT;
@@ -1056,12 +1061,25 @@ int MDMParser::socketSocket(IpProtocol ipproto, int port)
         if (ipproto == IPPROTO_UDP) {
             // sending port can only be set on 2G/3G modules
             if ((port != -1) && (_dev.dev != DEV_LISA_C2)) {
+
+            	// CREATE SOCKET
                 sendFormated("AT+USOCR=17,%d\r\n", port);
+                //sendFormated("AT+NSOCR=17,%d\r\n", port);
+
+
             } else {
+
+            	// CREATE SOCKET
                 sendFormated("AT+USOCR=17\r\n");
+                //sendFormated("AT+NSOCR=17\r\n");
+
             }
         } else /*(ipproto == IPPROTO_TCP)*/ {
+
+        	// CREATE SOCKET
             sendFormated("AT+USOCR=6\r\n");
+            //sendFormated("AT+NSOCR=6\r\n");
+
         } 
         int handle = SOCKET_ERROR;
         if ((RESP_OK == waitFinalResp(_cbUSOCR, &handle)) && 
@@ -1089,7 +1107,13 @@ bool MDMParser::socketConnect(int socket, const char * host, int port)
     LOCK();
     if (ISSOCKET(socket) && (!_sockets[socket].connected)) {
         TRACE("socketConnect(%d,%s,%d)\r\n", socket,host,port);
+
+
+        //CONNECT SOCKET
         sendFormated("AT+USOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
+        //sendFormated("AT+NSOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
+
+
         if (RESP_OK == waitFinalResp())
             ok = _sockets[socket].connected = true;
     }
@@ -1126,7 +1150,13 @@ bool  MDMParser::socketClose(int socket)
     LOCK();
     if (ISSOCKET(socket) && _sockets[socket].connected) {
         TRACE("socketClose(%d)\r\n", socket);
+
+
+        //CLOSE SOCKET
         sendFormated("AT+USOCL=%d\r\n", _sockets[socket].handle);
+        //sendFormated("AT+NSOCL=%d\r\n", _sockets[socket].handle);
+
+
         if (RESP_OK == waitFinalResp()) {
             _sockets[socket].connected = false;
             ok = true;
@@ -1196,8 +1226,13 @@ int MDMParser::socketSendTo(int socket, IP ip, int port, const char * buf, int l
         bool ok = false;
         LOCK();
         if (ISSOCKET(socket)) {
+
+        	// SENDTO COMMAND UDP
             sendFormated("AT+USOST=%d,\"" IPSTR "\",%d,%d\r\n",_sockets[socket].handle,IPNUM(ip),port,blk);
-            //sendFormated("AT+UPING=\"" IPSTR "\"\r\n",IPNUM(ip));
+            //sendFormated("AT+NSOST=%d,\"" IPSTR "\",%d,%d\r\n",_sockets[socket].handle,IPNUM(ip),port,blk);
+
+            //sendFormated("AT+UPING=\"" IPSTR "\"\r\n",IPNUM(ip));//PING
+
             if (RESP_PROMPT == waitFinalResp())
             {
                 wait_ms(50);
@@ -1294,8 +1329,13 @@ int MDMParser::_cbUSORF(int type, const char* buf, int len, USORFparam* param)
 {
     if ((type == TYPE_PLUS) && param) {
         int sz, sk, p, a,b,c,d;
-        int r = sscanf(buf, "\r\n+USORF: %d,\"" IPSTR "\",%d,%d,", 
-            &sk,&a,&b,&c,&d,&p,&sz);
+
+
+        //RECEIVE FROM DARA UDP
+        int r = sscanf(buf, "\r\n+USORF: %d,\"" IPSTR "\",%d,%d,", &sk,&a,&b,&c,&d,&p,&sz);
+        //int r = sscanf(buf, "\r\n+NSORF: %d,\"" IPSTR "\",%d,%d,", &sk,&a,&b,&c,&d,&p,&sz);
+
+
         if ((r == 7) && (buf[len-sz-2] == '\"') && (buf[len-1] == '\"')) {
             memcpy(param->buf, &buf[len-1-sz], sz);
             param->ip = IPADR(a,b,c,d);
@@ -1323,7 +1363,13 @@ int MDMParser::socketRecvFrom(int socket, IP* ip, int* port, char* buf, int len)
             if (_sockets[socket].pending < blk)
                 blk = _sockets[socket].pending;
             if (blk > 0) {
+
+
+            	//RECEIVE FROM DATA UDP
                 sendFormated("AT+USORF=%d,%d\r\n",_sockets[socket].handle, blk);
+                //sendFormated("AT+NSORF=%d,%d\r\n",_sockets[socket].handle, blk);
+
+
                 USORFparam param;
                 param.buf = buf;
                 if (RESP_OK == waitFinalResp(_cbUSORF, &param)) {
@@ -2198,6 +2244,7 @@ int MDMParser::_getLine(Pipe<char>* pipe, char* buf, int len)
         } lutF[] = {
             { "\r\n+USORD: %d,%d,\"%c\"",                   TYPE_PLUS       },
             { "\r\n+USORF: %d,\"" IPSTR "\",%d,%d,\"%c\"",  TYPE_PLUS       },
+			//{ "\r\n+NSORF: %d,\"" IPSTR "\",%d,%d,\"%c\"",  TYPE_PLUS       },
             { "\r\n+URDFILE: %s,%d,\"%c\"",                 TYPE_PLUS       },
             { "\r\n+URDBLOCK: %s,%d,\"%c\"",                TYPE_PLUS       },
         };

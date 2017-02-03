@@ -22,8 +22,8 @@
 //#define MBED_DOMAIN          "e5728ced-5cfe-4812-833f-375eb9ba65d2"
 //#define MBED_ENDPOINT_NAME   "323b5137-37f7-4ca3-8cd6-d87e0810312a"
 
-#define MBED_DOMAIN          "353816052696046"
-#define MBED_ENDPOINT_NAME   "353816052696046"
+#define MBED_DOMAIN          ""
+#define MBED_ENDPOINT_NAME   "urn:imei:353816052696046"
 
 
 __attribute__((section("AHBSRAM1")))

@@ -17,9 +17,6 @@
 #include "CellInterface.h"
 #include "MDM.h"
 #include "network-socket/NetworkInterface.h"
-//#include <string>
-//#include <cstdio>
-//#include <iostream>
 
 __attribute__((section("AHBSRAM0"))) static MDMParser::IP myip;
 static int mysocket = -1;
@@ -27,8 +24,8 @@ __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 
 
 //ZELITRON Server VIP (Load balancer )
-#define HOST "192.168.5.80"
-#define PORT 9005
+//#define HOST "192.168.5.80"
+//#define PORT 9005
 
 //ZELITRON
 //#define HOST "195.46.10.19"
@@ -46,6 +43,13 @@ __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 //#define HOST "coap.me"
 //#define PORT 5683
 
+//Neul ecco server
+#define HOST "120.16.45.6"
+#define PORT 41000
+
+
+
+
 
 
 #define SIMPIN      NULL                //  NULL
@@ -54,15 +58,23 @@ __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 #define PASSWORD    "web"               //  NULL
 
 
+// Porting
+// Sara-N module power pin
+static DigitalOut gModulePowerOn(P1_17, 0);
+// Sara-N module reset pin
+static DigitalOut gSaraResetBar(P1_0, 0);
+
 
 int CellInterface::connect(
 		const char *apn          /* = 0 */,
 		const char *username     /* = 0 */,
 		const char *password     /* = 0 */)
 {
-	printf("Cell-connect \r\n");
-	pMdm = new MDMSerial();        // use mdm(D1,D0) if you connect the cellular shield to a C027
-	pMdm->setDebug(4);             // enable this for debugging issues
+	gModulePowerOn = 1;
+	gSaraResetBar = 1;
+
+	pMdm = new MDMSerial(MDMTXD, MDMRXD, 9600, NC, NC);     // use mdm(D1,D0) if you connect the cellular shield to a C027
+	pMdm->setDebug(4);             							// enable this for debugging issues
 
 	// initialize the modem
 	MDMParser::DevStatus devStatus = {};
@@ -79,7 +91,7 @@ int CellInterface::connect(
 	        // join the internet connection
 	        MDMParser::IP ip = pMdm->join(APN,USERNAME,PASSWORD);
 	        if (ip == NOIP){
-	            printf("Not able to join network \r\n");
+	            printf("Not able to join network ! \r\n");
 	        }
 	        else
 	        {
@@ -87,12 +99,6 @@ int CellInterface::connect(
 	            myip = pMdm->gethostbyname(HOST);
 	        }
 	}
-//	pMdm = new MDMSerial();
-//
-//	if (pMdm != NULL) {
-//		pMdm->setDebug(4);
-//		return (int) pMdm->connect(NULL, apn, username, password);
-//	}
     return (int)false;
 }
 
@@ -106,7 +112,6 @@ int CellInterface::disconnect()
 }
 const char *CellInterface::get_ip_address()
 {
-	printf("Cell-get-ip-address \r\n");
 	char textToWrite[ 16 ];
 	uint32_t ip;
 	if (pMdm != NULL) {
@@ -117,7 +122,6 @@ const char *CellInterface::get_ip_address()
 }
 const char *CellInterface::get_mac_address()
 {
-	printf("Cell-get-mac-address \r\n");
 	char *ret = "mac";
     return ret;
 }
@@ -129,22 +133,18 @@ class CellNet : public NetworkStack{
 	public:
 	    virtual const char *get_ip_address(void)
 	    {
-	    	printf("---> get_ip_address \r\n");
 	    	return (const char *)pMdm->getIpAddress();
 	    }
 	    virtual int gethostbyname(SocketAddress *address, const char *host)
 	    {
-	    	printf("---> gethostbyname :%s\r\n", host);
 	        return 0;
 	    }
 	    virtual int setstackopt(int level, int optname, const void *optval, unsigned optlen)
 	    {
-	    	printf("---> setstackopt \r\n");
 	    	return (int)true;
 	    }
 	    virtual int getstackopt(int level, int optname, void *optval, unsigned *optlen)
 	    {
-	    	printf("---> getstackopt \r\n");
 	    	return (int)true;
 	    }
 
@@ -154,28 +154,19 @@ class CellNet : public NetworkStack{
 
 	    virtual int socket_open(nsapi_socket_t *handle, nsapi_protocol_t proto)
 	    {
-	    	printf("---> socket_open handle:(%d) protocol:(%d) \r\n", (int)handle, (int)proto);
-//
-//	    	static bool status = true;
-//	    	if(status){
-//	    		mysocket = pMdm->socketSocket(MDMParser::IPPROTO_UDP, PORT);
-//	    		pMdm->socketSetBlocking(mysocket, 10000);
-//	    		status=false;
-//	    	}
 	    	return (int)0;
 	    }
 
 	    virtual int socket_close(nsapi_socket_t handle)
 	    {
-	    	printf("---> socket_close handle:(%d)\r\n", (int)handle);
-	    	pMdm->socketClose( (int)mysocket );
+	    	//printf("---> socket_close handle:(%d)\r\n", (int)handle);
+	    	//pMdm->socketClose( (int)mysocket );
 	    	return (int)0;
 	    }
 
 	    virtual int socket_bind(nsapi_socket_t handle, const SocketAddress &address)
 	    {
-	    	printf("---> socket_bind handle:(%d)\r\n");
-
+	    	//printf("---> socket_bind handle:(%d)\r\n");
 	        if (mysocket < 0) {
 	            mysocket = pMdm->socketSocket(MDMParser::IPPROTO_UDP, PORT);
 	            if (mysocket < 0) {
@@ -188,69 +179,59 @@ class CellNet : public NetworkStack{
 
 	    virtual int socket_listen(nsapi_socket_t handle, int backlog)
 	    {
-	    	printf("---> socket_listen \r\n");
+	    	//printf("---> socket_listen \r\n");
 	    	return (int)true;
 	    }
 	    virtual int socket_connect(nsapi_socket_t handle, const SocketAddress &address)
 	    {
-	    	printf("---> socket_connect \r\n");
+	    	//printf("---> socket_connect \r\n");
 	    	pMdm->socketConnect( (int) mysocket, (const char*) "coap://api.connector.mbed.com", 5684);
 	    	return (int)true;
 	    }
 	    virtual int socket_accept(nsapi_socket_t *handle, nsapi_socket_t server)
 	    {
-	    	printf("---> socket_accept \r\n");
 	    	return (int)true;
 	    }
 	    virtual int socket_send(nsapi_socket_t handle, const void *data, unsigned size)
 	    {
-	    	printf("---> socket_send \r\n");
+	    	//printf("---> socket_send \r\n");
 	    	return (int) pMdm->socketSend( (int) mysocket, (const char *) data, (int) size);
 	    }
 	    virtual int socket_recv(nsapi_socket_t handle, void *data, unsigned size)
 	    {
-	    	printf("---> socket_recv \r\n");
+	    	//printf("---> socket_recv \r\n");
 	    	return (int) pMdm->socketRecv( (int) mysocket, (char*) data, (int) size);
 	    }
 	    virtual int socket_sendto(nsapi_socket_t handle, const SocketAddress &address, const void *data, unsigned size)
 	    {
 	    	int ret;
-	    	printf("\n ---> socket_sendto handle:(%d) size:(%d)\r\n", (int)handle, (int)size);
+	    	printf("\n\n\n\r ---> socket_sendto handle:(%d) size:(%d)\r\n", (int)handle, (int)size);
 
-	    	//ret = (int) (pMdm->socketSendTo( (int)mysocket, myip, PORT ,  static_cast<const char*>(data)   , (int)size ));
-	    	ret = (int) (pMdm->socketSendTo( (int)mysocket, myip, PORT ,  reinterpret_cast<const char*>(data)   , (int)size ));
-
-
-	    	//ret = (int) (pMdm->socketSendTo( (int)mysocket, myip, PORT ,(char *)data, (int)size ));
-	    	pMdm->socketClose( (int)mysocket );
+	    	ret = (int) (pMdm->socketSendTo( (int)0,(MDMParser::IP)HOST,PORT,reinterpret_cast<const char*>(data),(int)size ) );
 	    	return ret;
 	    }
 
 	    virtual int socket_recvfrom(nsapi_socket_t handle, SocketAddress *address, void *buffer, unsigned size)
 	    {
-	    	printf("---> socket_recvfrom handle:(%d) size:(%d) \r\n", (int)handle, (int)size);
-
+	    	printf("\n\n\n\r ---> socket_recvfrom handle:(%d) size:(%d) \r\n", (int)handle, (int)size);
 	    	MDMParser::IP ip;
 	    	int port;
-	    	return pMdm->socketRecvFrom( mysocket, &ip, &port, (char*)buffer, (int)size );
+	    	return pMdm->socketRecvFrom( (int)0, &ip, &port, (char*)buffer, (int)size );
 	    }
-
-
-
 
 	    virtual void socket_attach(nsapi_socket_t handle, void (*callback)(void *), void *data)
 	    {
-	    	printf("---> socket_attach handle:(%d)\r\n", (int)handle);
+	    	//printf("---> socket_attach handle:(%d)\r\n", (int)handle);
 	    }
 
 	    virtual int setsockopt(nsapi_socket_t handle, int level, int optname, const void *optval, unsigned optlen)
 	    {
-	    	printf("---> setsockopt \r\n");
+	    	//printf("---> setsockopt \r\n");
 	    	return (int)0;
 	    }
 	    virtual int getsockopt(nsapi_socket_t handle, int level, int optname, void *optval, unsigned *optlen)
 	    {
-	    	printf("---> getsockopt \r\n");
+	    	//printf("---> getsockopt \r\n");
 	    	return (int)0;
 	    }
 };
@@ -260,7 +241,6 @@ class CellNet : public NetworkStack{
 static CellNet *cellnet = NULL;
 NetworkStack *CellInterface::get_stack()
 {
-	printf("Cell-get-stack !!! \r\n");
 	if(!cellnet){
 		cellnet = new CellNet;
 	}

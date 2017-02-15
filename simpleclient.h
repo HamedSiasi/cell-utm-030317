@@ -1,17 +1,15 @@
 /*
- * Copyright (c) 2015 ARM Limited. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) u-blox Melbourn Ltd
+ * u-blox Melbourn Ltd, Melbourn, UK
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * All rights reserved.
+ *
+ * This source file is the sole property of u-blox Melbourn Ltd.
+ * Reproduction or utilisation of this source in whole or part is
+ * forbidden without the written consent of u-blox Melbourn Ltd.
+ * hamed.siasi@u-blox.com
+ *
  */
 
 #ifndef __SIMPLECLIENT_H__
@@ -90,7 +88,7 @@ public:
      */
     void create_interface(const char *server_address, void *handler=NULL) {
     	_server_address = server_address;
-    	uint16_t port = 9005;
+    	uint16_t port = 41000; // 9005 Newburry OpenLAB
 
     	_interface = M2MInterfaceFactory::create_interface(*this,
                                                       	  MBED_ENDPOINT_NAME,       // endpoint name string

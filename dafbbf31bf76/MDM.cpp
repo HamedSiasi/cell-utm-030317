@@ -1,3 +1,19 @@
+/*
+ *
+ * Copyright (C) u-blox Melbourn Ltd
+ * u-blox Melbourn Ltd, Melbourn, UK
+ *
+ * All rights reserved.
+ *
+ * This source file is the sole property of u-blox Melbourn Ltd.
+ * Reproduction or utilisation of this source in whole or part is
+ * forbidden without the written consent of u-blox Melbourn Ltd.
+ * hamed.siasi@u-blox.com
+ *
+ */
+
+
+
 #include "mbed.h"
 #include "MDM.h"
 #ifdef TARGET_UBLOX_C027
@@ -128,7 +144,7 @@ int MDMParser::send(const char* buf, int len)
 }
 
 int MDMParser::sendFormated(const char* format, ...) {
-    char buf[MAX_SIZE];
+    char buf[MAX_SIZE + 64];
     va_list args;
     va_start(args, format);
     int len = vsnprintf(buf,sizeof(buf), format, args);
@@ -136,9 +152,9 @@ int MDMParser::sendFormated(const char* format, ...) {
     return send(buf, len);
 }
 
-int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/, 
-                             void* param /* = NULL*/, 
-                             int timeout_ms /*= 5000*/)
+int MDMParser::waitFinalResp(_CALLBACKPTR cb  /* = NULL*/,
+                             void* param      /* = NULL*/,
+                             int timeout_ms   /*= 5000*/)
 {
     char buf[MAX_SIZE + 64 /* add some more space for framing */]; 
     Timer timer;
@@ -165,39 +181,53 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
         {
             int type = TYPE(ret);
             // handle unsolicited commands here
-            if (type == TYPE_PLUS) {
+            if (type == TYPE_PLUS)
+            {
                 const char* cmd = buf+3;
                 int a, b, c, d, r;
                 char s[32];
-                                                
-                // SMS Command ---------------------------------
+
+
                 // +CNMI: <mem>,<index>
-                if (sscanf(cmd, "CMTI: \"%*[^\"]\",%d", &a) == 1) { 
+                if (sscanf(cmd, "CMTI: \"%*[^\"]\",%d", &a) == 1)
+                {
                     TRACE("New SMS at index %d\r\n", a);
-                // Socket Specific Command ---------------------------------
-                // +UUSORD: <socket>,<length>
-                } else if ((sscanf(cmd, "UUSORD: %d,%d", &a, &b) == 2)) {
+                     // Socket Specific Command ---------------------------------
+                     // +UUSORD: <socket>,<length>
+                }
+
+                else if ((sscanf(cmd, "NSONMI: %d,%d", &a, &b) == 2))
+                {
                     int socket = _findSocket(a);
-                    TRACE("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
+                    TRACE("Socket %d: handle %d has %d bytes pending ############################################################\r\n", socket, a, b);
                     if (socket != SOCKET_ERROR)
                         _sockets[socket].pending = b;
-                // +UUSORF: <socket>,<length>
-                } else if ((sscanf(cmd, "UUSORF: %d,%d", &a, &b) == 2)) {
+                    // +UUSORF: <socket>,<length>
+                }
+
+                else if ((sscanf(cmd, "UUSORF: %d,%d", &a, &b) == 2))
+                {
                     int socket = _findSocket(a);
                     TRACE("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
                     if (socket != SOCKET_ERROR)
                         _sockets[socket].pending = b;
                 // +UUSOCL: <socket>
-                } else if ((sscanf(cmd, "UUSOCL: %d", &a) == 1)) {
+                }
+
+                else if ((sscanf(cmd, "UUSOCL: %d", &a) == 1))
+                {
                     int socket = _findSocket(a);
                     TRACE("Socket %d: handle %d closed by remote host\r\n", socket, a);
                     if ((socket != SOCKET_ERROR) && _sockets[socket].connected)
                         _sockets[socket].connected = false;                                    
-                // +UULOC: <date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>, <direction>,<vertical_acc>,<sensor_used>,<SV_used>,<antenna_status>, <jamming_status>
-                }else if (sscanf(cmd, "UULOC: %d/%d/%d,%d:%d:%d.%*d,%f,%f,%d,%d,%d,%d,%d,%d,%d,%*d,%*d",\
+                    // +UULOC: <date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>, <direction>,<vertical_acc>,<sensor_used>,<SV_used>,<antenna_status>, <jamming_status>
+                }
+
+                else if (sscanf(cmd, "UULOC: %d/%d/%d,%d:%d:%d.%*d,%f,%f,%d,%d,%d,%d,%d,%d,%d,%*d,%*d",\
                         &_loc[0].time.tm_mday, &_loc[0].time.tm_mon, &_loc[0].time.tm_year, &_loc[0].time.tm_hour, &_loc[0].time.tm_min, &_loc[0].time.tm_sec,\
                         &_loc[0].latitude, &_loc[0].longitude, &_loc[0].altitutude, &_loc[0].uncertainty, &_loc[0].speed, &_loc[0].direction, &_loc[0].verticalAcc, \
-                        &b, &_loc[0].svUsed) == 15) {
+                        &b, &_loc[0].svUsed) == 15)
+                {
                     TRACE("Parsed UULOC position at index 0\r\n");                                        
                     _loc[0].sensor = (b==0)? CELL_LAST : (b==1)? CELL_GNSS : (b==2)? CELL_LOCATE : (b==3)? CELL_HYBRID : CELL_LAST;
                     _loc[0].time.tm_mon -= 1;
@@ -206,12 +236,15 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                     _loc[0].validData = true;
                     _locExpPos=1;
                     _locRcvPos++;
-               // +UULOC: <sol>,<num>,<sensor_used>,<date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>, <direction>,<vertical_acc>,,<SV_used>,<antenna_status>, <jamming_status>                              
-               }else if (sscanf(cmd, "UULOC: %d,%d,%d,%d/%d/%d,%d:%d:%d.%*d,%f,%f,%d,%d,%d,%d,%d,%d,%*d,%*d",\
+                     // +UULOC: <sol>,<num>,<sensor_used>,<date>,<time>,<lat>,<long>,<alt>,<uncertainty>,<speed>, <direction>,<vertical_acc>,,<SV_used>,<antenna_status>, <jamming_status>
+               }
+
+                else if (sscanf(cmd, "UULOC: %d,%d,%d,%d/%d/%d,%d:%d:%d.%*d,%f,%f,%d,%d,%d,%d,%d,%d,%*d,%*d",\
                         &a,&_locExpPos,&b, \
                         &_loc[CELL_MAX_HYP-1].time.tm_mday, &_loc[CELL_MAX_HYP-1].time.tm_mon, &_loc[CELL_MAX_HYP-1].time.tm_year, &_loc[CELL_MAX_HYP-1].time.tm_hour, &_loc[CELL_MAX_HYP-1].time.tm_min, &_loc[CELL_MAX_HYP-1].time.tm_sec,\
                         &_loc[CELL_MAX_HYP-1].latitude, &_loc[CELL_MAX_HYP-1].longitude, &_loc[CELL_MAX_HYP-1].altitutude, &_loc[CELL_MAX_HYP-1].uncertainty, &_loc[CELL_MAX_HYP-1].speed, &_loc[CELL_MAX_HYP-1].direction, &_loc[CELL_MAX_HYP-1].verticalAcc, \
-                        &_loc[CELL_MAX_HYP-1].svUsed) == 17) {  
+                        &_loc[CELL_MAX_HYP-1].svUsed) == 17)
+                {
                     if (--a>=0){                         
                         TRACE("Parsed UULOC position at index %d\r\n",a);                    
                         memcpy(&_loc[a], &_loc[CELL_MAX_HYP-1], sizeof(*_loc)); 
@@ -222,11 +255,14 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         _loc[a].validData = true;                    
                         _locRcvPos++;                                            
                     }
-              //+UULOC: <sol>,<num>,<sensor_used>,<date>,<time>,<lat>,<long>,<alt>,<lat50>,<long50>,<major50>,<minor50>,<orientation50>,<confidence50>[,<lat95>,<long95>,<major95>,<minor95>,<orientation95>,<confidence95>]
-               }else if (sscanf(cmd, "UULOC: %d,%d,%d,%d/%d/%d,%d:%d:%d.%*d,%f,%f,%d,%*f,%*f,%d,%*d,%*d,%*d",\
+                    //+UULOC: <sol>,<num>,<sensor_used>,<date>,<time>,<lat>,<long>,<alt>,<lat50>,<long50>,<major50>,<minor50>,<orientation50>,<confidence50>[,<lat95>,<long95>,<major95>,<minor95>,<orientation95>,<confidence95>]
+               }
+
+                else if (sscanf(cmd, "UULOC: %d,%d,%d,%d/%d/%d,%d:%d:%d.%*d,%f,%f,%d,%*f,%*f,%d,%*d,%*d,%*d",\
                         &a,&_locExpPos,&b, \
                         &_loc[CELL_MAX_HYP-1].time.tm_mday, &_loc[CELL_MAX_HYP-1].time.tm_mon, &_loc[CELL_MAX_HYP-1].time.tm_year, &_loc[CELL_MAX_HYP-1].time.tm_hour, &_loc[CELL_MAX_HYP-1].time.tm_min, &_loc[CELL_MAX_HYP-1].time.tm_sec,\
-                        &_loc[CELL_MAX_HYP-1].latitude, &_loc[CELL_MAX_HYP-1].longitude, &_loc[CELL_MAX_HYP-1].altitutude, &_loc[CELL_MAX_HYP-1].uncertainty) == 13) {                    
+                        &_loc[CELL_MAX_HYP-1].latitude, &_loc[CELL_MAX_HYP-1].longitude, &_loc[CELL_MAX_HYP-1].altitutude, &_loc[CELL_MAX_HYP-1].uncertainty) == 13)
+                {
                     if (--a>=0){    
                         TRACE("Parsed UULOC position at index %d\r\n",a);
                         memcpy(&_loc[a], &_loc[CELL_MAX_HYP-1], sizeof(*_loc));                                        
@@ -237,13 +273,22 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         _loc[a].validData = true;                    
                         _locRcvPos++;                    
                     }                              
-                // +UHTTPCR: <profile_id>,<op_code>,<param_val>
-                } else if ((sscanf(cmd, "UUHTTPCR: %d,%d,%d", &a, &b, &c) == 3)) {
+                     // +UHTTPCR: <profile_id>,<op_code>,<param_val>
+                }
+
+                else if ((sscanf(cmd, "UUHTTPCR: %d,%d,%d", &a, &b, &c) == 3))
+                {
                     _httpProfiles[a].cmd = b;          //command
                     _httpProfiles[a].result = c;       //result
                     TRACE("%s for profile %d: result code is %d\r\n", getHTTPcmd(b), a, c);
                 }
-                if (_dev.dev == DEV_LISA_C2) {
+
+
+
+
+
+                if (_dev.dev == DEV_LISA_C2)
+                {
                     // CDMA Specific -------------------------------------------
                     // +CREG: <n><SID>,<NID>,<stat>
                     if (sscanf(cmd, "CREG: %*d,%d,%d,%d",&a,&b,&c) == 3) {
@@ -260,7 +305,9 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                     } else if (sscanf(cmd, "CSS %*c,%2s,%*d",s) == 1) {
                         //_net.reg = (strcmp("Z", s) == 0) ? REG_UNKNOWN : REG_HOME;
                     }
-                } else {
+                }
+                else
+                {
                     // GSM/UMTS Specific -------------------------------------------
                     // +UUPSDD: <profile_id> 
                     if (sscanf(cmd, "UUPSDD: %d",&a) == 1) {
@@ -302,7 +349,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb /* = NULL*/,
                         }
                     }
                 }
-            }
+            }// type != TYPE_PLUS
             if (cb) {
                 int len = LENGTH(ret);
                 int ret = cb(type, buf, len, param);
@@ -343,7 +390,11 @@ int MDMParser::_cbInt(int type, const char* buf, int len, int* val)
     return WAIT;
 }
 
-// ----------------------------------------------------------------
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------
+// init register
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 bool MDMParser::connect(
             const char* simpin, 
@@ -368,7 +419,7 @@ bool MDMParser::connect(
     if (_debugLevel >= 1) dumpIp(ip);
 #endif
     if (ip == NOIP)
-        return false; 
+        return false;
     return true;
 }
 
@@ -378,11 +429,12 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
     LOCK();
     memset(&_dev, 0, sizeof(_dev));
     if (pn != NC) {
-        INFO("Modem::wakeup\r\n");
-        wait_ms(7000);
+        INFO("Modem::wakeup ...\r\n");
+        wait_ms(1000);
 
         DigitalOut pin(pn, 1);
-        while (i--) {
+        while (i--)
+        {
             // SARA-U2/LISA-U2 50..80us
             pin = 0; ::wait_us(50);
             pin = 1; ::wait_ms(10); 
@@ -403,150 +455,63 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
             ERROR("No Reply from Modem\r\n");
             goto failure;
         }
+        waitFinalResp(NULL, NULL, 500);
     }
     _init = true;
     
+
     INFO("Modem::init\r\n");
-    // echo off
-    sendFormated("AT E0\r\n");
-    if(RESP_OK != waitFinalResp())
-        goto failure; 
-    // enable verbose error messages
-    sendFormated("AT+CMEE=2\r\n");
-    if(RESP_OK != waitFinalResp())
-        goto failure;
-    // set baud rate
-    sendFormated("AT+IPR=115200\r\n");
-    if (RESP_OK != waitFinalResp())
-        goto failure;
-    // wait some time until baudrate is applied
-    wait_ms(200); // SARA-G > 40ms
-    // identify the module 
-    sendFormated("ATI\r\n");
-    if (RESP_OK != waitFinalResp(_cbATI, &_dev.dev))
-        goto failure;
-    if (_dev.dev == DEV_UNKNOWN)
-        goto failure;
-    // device specific init
-    if (_dev.dev == DEV_LISA_C2) {
-        // get the manufacturer
-        sendFormated("AT+GMI\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.manu))
-            goto failure;
-        // get the model identification
-        sendFormated("AT+GMM\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.model))
-            goto failure;
-        // get the sw version
-        sendFormated("AT+GMR\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.ver))
-            goto failure;
-        // get the pseudo ESN or MEID
-        sendFormated("AT+GSN\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.meid))
-            goto failure;
-#if 0
-        // enable power saving
-        if (_dev.lpm != LPM_DISABLED) {
-             // enable power saving (requires flow control, cts at least)
-            sendFormated("AT+UPSV=1,1280\r\n");
-            if (RESP_OK != waitFinalResp())
-                goto failure;  
-            _dev.lpm = LPM_ACTIVE;
-        }
-#endif
-    } else {
-        if ((_dev.dev == DEV_LISA_U2) || (_dev.dev == DEV_LEON_G2) || 
-            (_dev.dev == DEV_TOBY_L2)) {
-            // enable the network identification feature 
-            sendFormated("AT+UGPIOC=20,2\r\n");
-            if (RESP_OK != waitFinalResp())
-                goto failure;
-        } else if ((_dev.dev == DEV_SARA_U2) || (_dev.dev == DEV_SARA_G35)) {
-            // enable the network identification feature 
-            sendFormated("AT+UGPIOC=16,2\r\n");
-            if (RESP_OK != waitFinalResp())
-                goto failure;
-        }
-        // check the sim card
-        for (int i = 0; (i < 5) && (_dev.sim != SIM_READY); i++) {
-            sendFormated("AT+CPIN?\r\n");
-            int ret = waitFinalResp(_cbCPIN, &_dev.sim);
-            // having an error here is ok (sim may still be initializing)
-            if ((RESP_OK != ret) && (RESP_ERROR != ret))
-                goto failure;
-            // Enter PIN if needed
-            if (_dev.sim == SIM_PIN) {
-                if (!simpin) {
-                    ERROR("SIM PIN not available\r\n");
-                    goto failure;
-                }
-                sendFormated("AT+CPIN=\"%s\"\r\n", simpin);
-                if (RESP_OK != waitFinalResp(_cbCPIN, &_dev.sim))
-                    goto failure;
-            } else if (_dev.sim != SIM_READY) {
-                wait_ms(1000);
-            }
-        }
-        if (_dev.sim != SIM_READY) {
-            if (_dev.sim == SIM_MISSING)
-                ERROR("SIM not inserted\r\n");
-            goto failure;
-        }
-        // get the manufacturer
-        sendFormated("AT+CGMI\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.manu))
-            goto failure;
-        // get the model identification
-        sendFormated("AT+CGMM\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.model))
-            goto failure;
-        // get the version
-        sendFormated("ATI9\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.ver))
-            goto failure;
-        // Returns the ICCID (Integrated Circuit Card ID) of the SIM-card. 
-        // ICCID is a serial number identifying the SIM.
-        sendFormated("AT+CCID\r\n");
-        if (RESP_OK != waitFinalResp(_cbCCID, _dev.ccid))
-            goto failure;
-        // Returns the product serial number, IMEI (International Mobile Equipment Identity)
-        sendFormated("AT+CGSN\r\n");
-        if (RESP_OK != waitFinalResp(_cbString, _dev.imei))
-            goto failure;
-        // enable power saving
-        if (_dev.lpm != LPM_DISABLED) {
-             // enable power saving (requires flow control, cts at least)
-            sendFormated("AT+UPSV=1\r\n");
-            if (RESP_OK != waitFinalResp())
-                goto failure;  
-            _dev.lpm = LPM_ACTIVE;
-        }
-        // enable the psd registration unsolicited result code
-        sendFormated("AT+CGREG=2\r\n");
-        if (RESP_OK != waitFinalResp())
-            goto failure;
-    } 
-    // enable the network registration unsolicited result code
-    sendFormated("AT+CREG=%d\r\n", (_dev.dev == DEV_LISA_C2) ? 1 : 2);
-    if (RESP_OK != waitFinalResp())
-        goto failure;
-    // Setup SMS in text mode 
-    sendFormated("AT+CMGF=1\r\n");
-    if (RESP_OK != waitFinalResp())
-        goto failure;
-    // setup new message indication
-    sendFormated("AT+CNMI=2,1\r\n");
-    if (RESP_OK != waitFinalResp())
-        goto failure;
-    // Request IMSI (International Mobile Subscriber Identification)
-    sendFormated("AT+CIMI\r\n");
-    if (RESP_OK != waitFinalResp(_cbString, _dev.imsi))
-        goto failure;
+    sendFormated("AT\r\n");
+    waitFinalResp();
+    wait_ms(5000);
+
+    sendFormated("AT\r\n");
+    waitFinalResp();
+    wait_ms(5000);
+
+    sendFormated("AT+NBAND?\r\n");
+    waitFinalResp();
+    wait_ms(10000);
+
+    sendFormated("AT+CMEE=1\r\n");
+    waitFinalResp();
+    wait_ms(10000);
+
+    INFO("Modem::Manufacturing revision \r\n");
+    sendFormated("AT+CGMR\r\n");
+    waitFinalResp();
+
+    INFO("Modem::Radio functionality \r\n");
+    sendFormated("AT+CFUN?\r\n");
+    waitFinalResp();
+    wait_ms(10000);
+
+    INFO("Modem::RegisterF \r\n");
+    //sendFormated("AT+COPS=1,2,\"23591\"\r\n");     // NEWBURY
+    sendFormated("AT+COPS=1,2,\"46001\"\r\n");   // NEUL
+    waitFinalResp();
+    wait_ms(40000);
+
+    INFO("Modem::Register status \r\n");
+    sendFormated("AT+CEREG?\r\n");
+    waitFinalResp();
+    wait_ms(10000);
+
+    bool ok = false;
+    INFO("Modem:: address \r\n");
+    sendFormated("AT+CGPADDR\r\n");
+    waitFinalResp(_cbCGPAddr, &ok);
+    if (!ok)
+    {
+    	INFO("Modem:: IP address ERROR !!!\r\n");
+    	goto failure;
+    }
+
     if (status)
         memcpy(status, &_dev, sizeof(DevStatus));
     UNLOCK();
     return true; 
+
 failure:
     unlock();
     return false; 
@@ -622,100 +587,102 @@ bool MDMParser::registerNet(NetStatus* status /*= NULL*/, int timeout_ms /*= 180
 
 bool MDMParser::checkNetStatus(NetStatus* status /*= NULL*/)
 {
-    bool ok = false;
-    LOCK();
-    memset(&_net, 0, sizeof(_net));
-    _net.lac = 0xFFFF;
-    _net.ci = 0xFFFFFFFF;
-    // check registration
-    sendFormated("AT+CREG?\r\n");
-    waitFinalResp();     // don't fail as service could be not subscribed 
-    if (_dev.dev != DEV_LISA_C2) {
-        // check PSD registration
-        sendFormated("AT+CGREG?\r\n");
-        waitFinalResp(); // don't fail as service could be not subscribed 
-        if ((_dev.dev == DEV_TOBY_L2) ||  (_dev.dev == DEV_MPCI_L2)) {
-            // check EPS network registration
-            sendFormated("AT+CEREG?\r\n");
-            waitFinalResp(); // don't fail as service could be not subscribed
-        }
-    }
-    if (REG_OK(_net.csd) || REG_OK(_net.psd) || REG_OK(_net.eps))
-    {
-        // check modem specific status messages 
-        if (_dev.dev == DEV_LISA_C2) {
-            sendFormated("AT+CSS?\r\n");
-            if (RESP_OK != waitFinalResp())
-                goto failure;
-            while (1) {
-                // get the Telephone number
-                sendFormated("AT$MDN?\r\n");
-                if (RESP_OK != waitFinalResp(_cbString, _net.num))
-                    goto failure;
-                // check if we have a Mobile Directory Number
-                if (*_net.num && (memcmp(_net.num, "000000", 6) != 0))
-                    break;
-                    
-                INFO("Device not yet activated\r\n");
-                INFO("Make sure you have a valid contract with the network operator for this device.\r\n");
-                // Check if the the version contains a V for Verizon 
-                // Verizon: E0.V.xx.00.xxR, 
-                // Sprint E0.S.xx.00.xxR
-                if (_dev.ver[3] == 'V') { 
-                    int i;
-                    INFO("Start device over-the-air activation (this can take a few minutes)\r\n");
-                    sendFormated("AT+CDV=*22899\r\n");
-                    i = 1;
-                    if ((RESP_OK != waitFinalResp(_cbUACTIND, &i, 120*1000)) || (i == 1)) {
-                        ERROR("Device over-the-air activation failed\r\n");
-                        goto failure;
-                    }
-                    INFO("Device over-the-air activation successful\r\n");
-                    
-                    INFO("Start PRL over-the-air update (this can take a few minutes)\r\n");
-                    sendFormated("AT+CDV=*22891\r\n");
-                    i = 1;
-                    if ((RESP_OK != waitFinalResp(_cbUACTIND, &i, 120*1000)) || (i == 1)) {
-                        ERROR("PRL over-the-air update failed\r\n");
-                        goto failure;
-                    }
-                    INFO("PRL over-the-air update successful\r\n");
-                    
-                } else { 
-                    // Sprint or Aeris 
-                    INFO("Wait for OMA-DM over-the-air activation (this can take a few minutes)\r\n");
-                    wait_ms(120*1000);
-                }
-            }
-            // get the the Network access identifier string
-            char nai[64];
-            sendFormated("AT$QCMIPNAI?\r\n");
-            if (RESP_OK != waitFinalResp(_cbString, nai))
-                goto failure;
-        } else {
-            sendFormated("AT+COPS?\r\n");
-            if (RESP_OK != waitFinalResp(_cbCOPS, &_net))
-                goto failure;
-            // get the MSISDNs related to this subscriber
-            sendFormated("AT+CNUM\r\n");
-            if (RESP_OK != waitFinalResp(_cbCNUM, _net.num))
-                goto failure;
-        }  
-        // get the signal strength indication
-        sendFormated("AT+CSQ\r\n");
-        if (RESP_OK != waitFinalResp(_cbCSQ, &_net))
-            goto failure;
-    }
-    if (status) {
-        memcpy(status, &_net, sizeof(NetStatus));
-    }
-    ok = REG_DONE(_net.csd) && 
-        (REG_DONE(_net.psd) || REG_DONE(_net.eps));
-    UNLOCK();
-    return ok;
-failure:
-    unlock();
-    return false;
+  return true;
+//	bool ok = false;
+//	    LOCK();
+//	    memset(&_net, 0, sizeof(_net));
+//	    _net.lac = 0xFFFF;
+//	    _net.ci = 0xFFFFFFFF;
+//	    // check registration
+//	    sendFormated("AT+CREG?\r\n");
+//	    waitFinalResp();     // don't fail as service could be not subscribed
+//	    if (_dev.dev != DEV_LISA_C2) {
+//	        // check PSD registration
+//	        sendFormated("AT+CGREG?\r\n");
+//	        waitFinalResp(); // don't fail as service could be not subscribed
+//	        if ((_dev.dev == DEV_TOBY_L2) ||  (_dev.dev == DEV_MPCI_L2)) {
+//	            // check EPS network registration
+//	            sendFormated("AT+CEREG?\r\n");
+//	            waitFinalResp(); // don't fail as service could be not subscribed
+//	        }
+//	    }
+//	    if (REG_OK(_net.csd) || REG_OK(_net.psd) || REG_OK(_net.eps))
+//	    {
+//	        // check modem specific status messages
+//	        if (_dev.dev == DEV_LISA_C2) {
+//	            sendFormated("AT+CSS?\r\n");
+//	            if (RESP_OK != waitFinalResp())
+//	                goto failure;
+//	            while (1) {
+//	                // get the Telephone number
+//	                sendFormated("AT$MDN?\r\n");
+//	                if (RESP_OK != waitFinalResp(_cbString, _net.num))
+//	                    goto failure;
+//	                // check if we have a Mobile Directory Number
+//	                if (*_net.num && (memcmp(_net.num, "000000", 6) != 0))
+//	                    break;
+//
+//	                INFO("Device not yet activated\r\n");
+//	                INFO("Make sure you have a valid contract with the network operator for this device.\r\n");
+//	                // Check if the the version contains a V for Verizon
+//	                // Verizon: E0.V.xx.00.xxR,
+//	                // Sprint E0.S.xx.00.xxR
+//	                if (_dev.ver[3] == 'V') {
+//	                    int i;
+//	                    INFO("Start device over-the-air activation (this can take a few minutes)\r\n");
+//	                    sendFormated("AT+CDV=*22899\r\n");
+//	                    i = 1;
+//	                    if ((RESP_OK != waitFinalResp(_cbUACTIND, &i, 120*1000)) || (i == 1)) {
+//	                        ERROR("Device over-the-air activation failed\r\n");
+//	                        goto failure;
+//	                    }
+//	                    INFO("Device over-the-air activation successful\r\n");
+//
+//	                    INFO("Start PRL over-the-air update (this can take a few minutes)\r\n");
+//	                    sendFormated("AT+CDV=*22891\r\n");
+//	                    i = 1;
+//	                    if ((RESP_OK != waitFinalResp(_cbUACTIND, &i, 120*1000)) || (i == 1)) {
+//	                        ERROR("PRL over-the-air update failed\r\n");
+//	                        goto failure;
+//	                    }
+//	                    INFO("PRL over-the-air update successful\r\n");
+//
+//	                } else {
+//	                    // Sprint or Aeris
+//	                    INFO("Wait for OMA-DM over-the-air activation (this can take a few minutes)\r\n");
+//	                    wait_ms(120*1000);
+//	                }
+//	            }
+//	            // get the the Network access identifier string
+//	            char nai[64];
+//	            sendFormated("AT$QCMIPNAI?\r\n");
+//	            if (RESP_OK != waitFinalResp(_cbString, nai))
+//	                goto failure;
+//	        } else {
+//	            sendFormated("AT+COPS?\r\n");
+//	            if (RESP_OK != waitFinalResp(_cbCOPS, &_net))
+//	                goto failure;
+//	            // get the MSISDNs related to this subscriber
+//	            sendFormated("AT+CNUM\r\n");
+//	            if (RESP_OK != waitFinalResp(_cbCNUM, _net.num))
+//	                goto failure;
+//	        }
+//	        // get the signal strength indication
+//	        sendFormated("AT+CSQ\r\n");
+//	        if (RESP_OK != waitFinalResp(_cbCSQ, &_net))
+//	            goto failure;
+//	    }
+//	    if (status) {
+//	        memcpy(status, &_net, sizeof(NetStatus));
+//	    }
+//	    ok = REG_DONE(_net.csd) &&
+//	        (REG_DONE(_net.psd) || REG_DONE(_net.eps));
+//	    UNLOCK();
+//	    return ok;
+//
+//	failure:
+//	    unlock();
+//	    return false;
 }
 
 int MDMParser::_cbCOPS(int type, const char* buf, int len, NetStatus* status)
@@ -761,7 +728,6 @@ int MDMParser::_cbCSQ(int type, const char* buf, int len, NetStatus* status)
     return WAIT;
 }
 
-
 int MDMParser::_cbUACTIND(int type, const char* buf, int len, int* i)
 {
     if ((type == TYPE_PLUS) && i){
@@ -773,8 +739,40 @@ int MDMParser::_cbUACTIND(int type, const char* buf, int len, int* i)
     return WAIT;
 }
 
-// ----------------------------------------------------------------
+// Neul L3 activity status
+// Check if we have an IP address.
+int MDMParser::_cbCGPAddr(int type, const char* buf, int len, bool* connected)
+{
+    int n;
+    int status;
+    int dummy, w, x, y, z;
+
+    if (connected)
+    {
+        if (type == TYPE_PLUS)
+        {
+            // +CGPADDR: dummy,www.xxx.yyy.zzz
+            if (sscanf(buf, "\r\n+CGPADDR:%d,%d.%d.%d.%d\r\n", &dummy, &w, &x, &y, &z) == 5)
+            {
+                *connected = true;
+            }
+            else
+            {
+                if (sscanf(buf, "\r\n+CGPADDR:%d\r\n", &dummy) == 1)
+                {
+                	*connected = false;
+                }
+            }
+        }
+    }
+    return WAIT;
+}
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
 // internet connection 
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 bool MDMParser::_activateProfile(const char* apn, const char* username, const char* password, Auth auth)
 {
@@ -1034,65 +1032,44 @@ MDMParser::IP MDMParser::gethostbyname(const char* host)
     return ip;
 }
 
-// ----------------------------------------------------------------
+
+
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
 // sockets
+// -------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 int MDMParser::_cbUSOCR(int type, const char* buf, int len, int* handle)
 {
-    if ((type == TYPE_PLUS) && handle) {
-        // +USOCR: socket
-
-        if (sscanf(buf, "\r\n+USOCR: %d", handle) == 1)
-        //if (sscanf(buf, "\r\n+NSOCR: %d", handle) == 1)
-
-            /*nothing*/;  
-    }
+	if (sscanf(buf,"\r\n %d", handle) == 1){
+	}else{
+		*handle = 0;
+	}
     return WAIT;
 }
 
 int MDMParser::socketSocket(IpProtocol ipproto, int port)
 {
     int socket;
+    wait_ms(10000);
     LOCK();
-    // find an free socket
-    socket = _findSocket();
-    TRACE("socketSocket(%d)\r\n", ipproto);
-    if (socket != SOCKET_ERROR) {
-        if (ipproto == IPPROTO_UDP) {
-            // sending port can only be set on 2G/3G modules
-            if ((port != -1) && (_dev.dev != DEV_LISA_C2)) {
 
-            	// CREATE SOCKET
-                sendFormated("AT+USOCR=17,%d\r\n", port);
-                //sendFormated("AT+NSOCR=17,%d\r\n", port);
+    sendFormated("AT+NSOCR=DGRAM,17,%d\r\n", port);
 
-
-            } else {
-
-            	// CREATE SOCKET
-                sendFormated("AT+USOCR=17\r\n");
-                //sendFormated("AT+NSOCR=17\r\n");
-
-            }
-        } else /*(ipproto == IPPROTO_TCP)*/ {
-
-        	// CREATE SOCKET
-            sendFormated("AT+USOCR=6\r\n");
-            //sendFormated("AT+NSOCR=6\r\n");
-
-        } 
-        int handle = SOCKET_ERROR;
-        if ((RESP_OK == waitFinalResp(_cbUSOCR, &handle)) && 
-            (handle != SOCKET_ERROR)) {
-            TRACE("Socket %d: handle %d was created\r\n", socket, handle);
-            _sockets[socket].handle     = handle;
-            _sockets[socket].timeout_ms = TIMEOUT_BLOCKING;
-            _sockets[socket].connected  = false;
-            _sockets[socket].pending    = 0;
-        }
-        else
-            socket = SOCKET_ERROR;
+    int handle = SOCKET_ERROR;
+    if ((RESP_OK == waitFinalResp(_cbUSOCR, &handle)) && (handle != SOCKET_ERROR))
+    {
+    	TRACE("Socket %d: handle %d was created\r\n", socket, handle);
+    	_sockets[socket].handle     = handle;
+    	_sockets[socket].timeout_ms = TIMEOUT_BLOCKING;
+    	_sockets[socket].connected  = false;
+    	_sockets[socket].pending    = 0;
     }
+    else
+    {
+    	 TRACE("socketSocket ERROR !!! \r\n");
+    	 socket = SOCKET_ERROR;
+     }
     UNLOCK();
     return socket;
 }
@@ -1110,8 +1087,8 @@ bool MDMParser::socketConnect(int socket, const char * host, int port)
 
 
         //CONNECT SOCKET
-        sendFormated("AT+USOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
-        //sendFormated("AT+NSOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
+        //sendFormated("AT+USOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
+        sendFormated("AT+NSOCO=%d,\"" IPSTR "\",%d\r\n", _sockets[socket].handle, IPNUM(ip), port);
 
 
         if (RESP_OK == waitFinalResp())
@@ -1151,11 +1128,9 @@ bool  MDMParser::socketClose(int socket)
     if (ISSOCKET(socket) && _sockets[socket].connected) {
         TRACE("socketClose(%d)\r\n", socket);
 
-
         //CLOSE SOCKET
-        sendFormated("AT+USOCL=%d\r\n", _sockets[socket].handle);
-        //sendFormated("AT+NSOCL=%d\r\n", _sockets[socket].handle);
-
+        //sendFormated("AT+USOCL=%d\r\n", _sockets[socket].handle);
+        sendFormated("AT+NSOCL=%d\r\n", _sockets[socket].handle);
 
         if (RESP_OK == waitFinalResp()) {
             _sockets[socket].connected = false;
@@ -1214,36 +1189,53 @@ int MDMParser::socketSend(int socket, const char * buf, int len)
     return (len - cnt);
 }
 
+void MDMParser::tohex(unsigned char * in, size_t insz, char * pout, size_t outsz)
+{
+    unsigned char * pin = in;
+    const char * hex = "0123456789ABCDEF";
+
+    if (outsz >= (insz * 2) + 1) {
+		for(; pin < in+insz; pin++){
+			*pout = hex[(*pin>>4) & 0xF];
+			pout++;
+			*pout = hex[ *pin     & 0xF];
+			pout++;
+		}
+    }
+	*pout = 0;
+}
+
 int MDMParser::socketSendTo(int socket, IP ip, int port, const char * buf, int len)
 {
-    TRACE("socketSendTo(%d," IPSTR ",%d,,%d)\r\n", socket,IPNUM(ip),port,len);
     int cnt = len;
-    while (cnt > 0) {
-        int blk = USO_MAX_WRITE/*1024*/;
-        if (cnt < blk) 
-            blk = cnt;//146
-
+    while (cnt > 0)
+    {
+        int blk = USO_MAX_WRITE;
+        if (cnt < blk)
+        {
+            blk = cnt;
+        }
         bool ok = false;
         LOCK();
-        if (ISSOCKET(socket)) {
+        char *str = (char*)malloc(3*len);
+        tohex( (unsigned char *)buf, (size_t)len,  (char *)str,  3*len);
 
-        	// SENDTO COMMAND UDP
-            sendFormated("AT+USOST=%d,\"" IPSTR "\",%d,%d\r\n",_sockets[socket].handle,IPNUM(ip),port,blk);
-            //sendFormated("AT+NSOST=%d,\"" IPSTR "\",%d,%d\r\n",_sockets[socket].handle,IPNUM(ip),port,blk);
-
-            //sendFormated("AT+UPING=\"" IPSTR "\"\r\n",IPNUM(ip));//PING
-
-            if (RESP_PROMPT == waitFinalResp())
-            {
-                wait_ms(50);
-                send(buf, blk);
-                if (RESP_OK == waitFinalResp())
-                    ok = true;
-            }
+        //sendFormated("AT+NSOST=0,195.46.10.19,%d,%d,%s\r\n", port,blk,str);    // Newbury OpenLAB
+        sendFormated("AT+NSOST=0,120.16.45.6,%d,%d,%s\r\n", port,blk,str);       // Neul ecco server
+        if (RESP_PROMPT == waitFinalResp())
+        {
+        	wait_ms(50);
+        	if (RESP_OK == waitFinalResp())
+        	{
+        		ok = true;
+        	}
         }
         UNLOCK();
+
         if (!ok)
+        {
             return SOCKET_ERROR;
+        }
         buf += blk;
         cnt -= blk;
     }
@@ -1265,17 +1257,22 @@ int MDMParser::socketReadable(int socket)
     return pending;
 }
 
+
+
 int MDMParser::_cbUSORD(int type, const char* buf, int len, char* out)
 {
+	//HOW MUCH DATA I HAVE TO READ
     if ((type == TYPE_PLUS) && out) {
         int sz, sk;
-        if ((sscanf(buf, "\r\n+USORD: %d,%d,", &sk, &sz) == 2) && 
+        if ((sscanf(buf, "\r\n+NSONMI:%d,%d,", &sk, &sz) == 2) &&
             (buf[len-sz-2] == '\"') && (buf[len-1] == '\"')) {
             memcpy(out, &buf[len-1-sz], sz);
         }
     }
     return WAIT;
 }
+
+
 
 int MDMParser::socketRecv(int socket, char* buf, int len)
 {
@@ -1329,12 +1326,7 @@ int MDMParser::_cbUSORF(int type, const char* buf, int len, USORFparam* param)
 {
     if ((type == TYPE_PLUS) && param) {
         int sz, sk, p, a,b,c,d;
-
-
-        //RECEIVE FROM DARA UDP
-        int r = sscanf(buf, "\r\n+USORF: %d,\"" IPSTR "\",%d,%d,", &sk,&a,&b,&c,&d,&p,&sz);
-        //int r = sscanf(buf, "\r\n+NSORF: %d,\"" IPSTR "\",%d,%d,", &sk,&a,&b,&c,&d,&p,&sz);
-
+        int r = sscanf(buf, "\r\n+NSONMI: %d,\"" IPSTR "\",%d,%d,",&sk,&a,&b,&c,&d,&p,&sz);
 
         if ((r == 7) && (buf[len-sz-2] == '\"') && (buf[len-1] == '\"')) {
             memcpy(param->buf, &buf[len-1-sz], sz);
@@ -1352,54 +1344,66 @@ int MDMParser::socketRecvFrom(int socket, IP* ip, int* port, char* buf, int len)
 #ifdef MDM_DEBUG
     memset(buf, '\0', len);
 #endif
+
+
+
     Timer timer;
     timer.start();
-    while (len) {
-        int blk = MAX_SIZE; // still need space for headers and unsolicited commands 
-        if (len < blk) blk = len;
-        bool ok = false;        
-        LOCK();
-        if (ISSOCKET(socket)) {
-            if (_sockets[socket].pending < blk)
-                blk = _sockets[socket].pending;
-            if (blk > 0) {
+    while (len) // 1152?
+    {
+    	int blk = MAX_SIZE; //128
+    	if (len < blk)
+    	{
+    		blk = len;
+    	}
+    	bool ok = false;
+    	LOCK();
+    	if (_sockets[socket].pending < blk)
+    	{
+    		blk = _sockets[socket].pending;
+    	}
+    	if (blk > 0)
+    	{
+    		// +NSONMI:socket,len received
 
-
-            	//RECEIVE FROM DATA UDP
-                sendFormated("AT+USORF=%d,%d\r\n",_sockets[socket].handle, blk);
-                //sendFormated("AT+NSORF=%d,%d\r\n",_sockets[socket].handle, blk);
-
-
-                USORFparam param;
-                param.buf = buf;
-                if (RESP_OK == waitFinalResp(_cbUSORF, &param)) {
-                    _sockets[socket].pending -= blk;
-                    *ip = param.ip;
-                    *port = param.port;
-                    len -= blk;
-                    cnt += blk;
-                    buf += blk;
-                    len = 0; // done 
-                    ok = true;
-                }
-            } else if (!TIMEOUT(timer, _sockets[socket].timeout_ms)) {
-                ok = (WAIT == waitFinalResp(NULL,NULL,0)); // wait for URCs
-            } else {
-                len = 0; // no more data and socket closed or timed-out
-                ok = true;
-            }
-        }
-        UNLOCK();
-        if (!ok) {
+    		sendFormated("AT+NSORF=0,%d\r\n", blk);
+    		USORFparam param;
+    		param.buf = buf;
+    		if (RESP_OK == waitFinalResp(_cbUSORF, &param))
+    		{
+    			TRACE("socketRecv: ERROR\r\n");
+    			_sockets[socket].pending -= blk;
+    			len -= blk;
+    			cnt += blk;
+    			buf += blk;
+    			len = 0;
+    			ok = true;
+    		}
+    	}
+    	else if (!TIMEOUT(timer, _sockets[socket].timeout_ms))
+    	{
+    			ok = (WAIT == waitFinalResp(NULL,NULL,0)); // wait for URCs
+    	}
+    	else
+    	{
+    			len = 0;
+    			ok = true;
+    	}
+    	UNLOCK();
+        if (!ok)
+        {
             TRACE("socketRecv: ERROR\r\n");
             return SOCKET_ERROR;
         }
-    }
+    } //while(len)
+
     timer.stop();
     timer.reset();
     TRACE("socketRecv: %d \"%*s\"\r\n", cnt, cnt, buf-cnt);
     return cnt;
 }
+
+
 
 int MDMParser::_findSocket(int handle) {
     for (int socket = 0; socket < NUMSOCKETS; socket ++) {
@@ -1409,8 +1413,11 @@ int MDMParser::_findSocket(int handle) {
     return SOCKET_ERROR;
 }
 
-// ----------------------------------------------------------------
+
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------
 // HTTP
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 int MDMParser::httpFindProfile()
 {
@@ -1704,7 +1711,9 @@ const char* MDMParser::getHTTPcmd(int httpCmdCode)
    }
 }
 
-// ----------------------------------------------------------------
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------
+// SMS
+// ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 int MDMParser::_cbCMGL(int type, const char* buf, int len, CMGLparam* param)
 { 
@@ -1785,7 +1794,7 @@ bool MDMParser::smsRead(int ix, char* num, char* buf, int len)
     return ok;
 }
    
-// ----------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------------------------------------------
   
 int MDMParser::_cbCUSD(int type, const char* buf, int len, char* resp)
 {
@@ -1811,7 +1820,7 @@ bool MDMParser::ussdCommand(const char* cmd, char* buf)
     return ok;
 }
 
-// ----------------------------------------------------------------
+// -----------------------------------------------------------------------------------------------------------------------------------------------------------
    
 int MDMParser::_cbUDELFILE(int type, const char* buf, int len, void*)
 {
@@ -1976,7 +1985,9 @@ int MDMParser::_cbULSTFILE(int type, const char* buf, int len, int* infoFile)
     return WAIT;
 }
 
-// ----------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 int MDMParser::cellLocSrvTcp(const char* token, const char* server_1, const char* server_2, int days/* = 14*/, \
         int period/* = 4*/, int resolution/* = 1*/)
 {
@@ -2084,7 +2095,7 @@ int MDMParser::cellLocGetData(CellLocData *data, int index/*=0*/){
     return true;
 }
 
-// ----------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------------------------------------------------
 bool MDMParser::setDebug(int level) 
 {
 #ifdef MDM_DEBUG
@@ -2160,7 +2171,7 @@ void MDMParser::dumpIp(MDMParser::IP ip,
         dprint(param, "Modem:IP " IPSTR "\r\n", IPNUM(ip));
 }
     
-// ----------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 int MDMParser::_parseMatch(Pipe<char>* pipe, int len, const char* sta, const char* end)
 {
     int o = 0;
@@ -2243,8 +2254,9 @@ int MDMParser::_getLine(Pipe<char>* pipe, char* buf, int len)
               const char* fmt;                              int type; 
         } lutF[] = {
             { "\r\n+USORD: %d,%d,\"%c\"",                   TYPE_PLUS       },
+			{ "\r\n+NSONMI: %d,%d,\"%c\"",                  TYPE_PLUS       },
             { "\r\n+USORF: %d,\"" IPSTR "\",%d,%d,\"%c\"",  TYPE_PLUS       },
-			//{ "\r\n+NSORF: %d,\"" IPSTR "\",%d,%d,\"%c\"",  TYPE_PLUS       },
+			{ "\r\n+NSORF: %d,\"" IPSTR "\",%d,%d,\"%c\"",  TYPE_PLUS       },
             { "\r\n+URDFILE: %s,%d,\"%c\"",                 TYPE_PLUS       },
             { "\r\n+URDBLOCK: %s,%d,\"%c\"",                TYPE_PLUS       },
         };

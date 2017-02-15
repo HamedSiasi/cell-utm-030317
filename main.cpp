@@ -1,18 +1,17 @@
 /*
- * Copyright (c) 2015 ARM Limited. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * Copyright (C) u-blox Melbourn Ltd
+ * u-blox Melbourn Ltd, Melbourn, UK
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * All rights reserved.
+ *
+ * This source file is the sole property of u-blox Melbourn Ltd.
+ * Reproduction or utilisation of this source in whole or part is
+ * forbidden without the written consent of u-blox Melbourn Ltd.
+ * hamed.siasi@u-blox.com
+ *
  */
+
 
 //#define debug
 #ifndef debug
@@ -25,8 +24,9 @@
 //#define MBED_SERVER_ADDRESS  "coap://169.45.82.18:5684"            // ARM LwM2M server
 //#define MBED_SERVER_ADDRESS  "coap://151.9.34.90:5683"             // Sgonico CoAP echo server
 //#define MBED_SERVER_ADDRESS  "coap://151.9.34.99:8080"             // Junaid Ashraf
-//#define MBED_SERVER_ADDRESS  "coap://195.46.10.19:9005"            // ZELITRON LwM2M server
-#define MBED_SERVER_ADDRESS    "coap://192.168.5.80:9005"            // ZELITRON Server VIP (Load balancer )
+//#define MBED_SERVER_ADDRESS    "coap://195.46.10.19:9005"            // ZELITRON LwM2M server  Newbury OpenLAB
+//#define MBED_SERVER_ADDRESS  "coap://192.168.5.80:9005"            // ZELITRON Server VIP (Load balancer )
+#define MBED_SERVER_ADDRESS    "coap://120.16.45.6:41000"            // Neul ecco server
 
 
 
@@ -148,9 +148,6 @@ private:
 
 
 
-
-
-
 int main() {
 
     NetworkInterface *network_interface = 0;
@@ -167,12 +164,12 @@ int main() {
 
     // OBJECTS LIST:
     M2MObjectList object_list;
-    //TempResource temp_resource;
-    ServerObj    server_resource;
+    TempResource temp_resource;
+    //ServerObj    server_resource;
 
     object_list.push_back(device_object);                     // obj 3
-    //object_list.push_back(temp_resource.get_object());        // obj 3303
-    object_list.push_back(server_resource.get_object());
+    object_list.push_back(temp_resource.get_object());        // obj 3303
+    //object_list.push_back(server_resource.get_object());
 
     mbed_client.set_register_object(securityObject);
     mbed_client.test_register(securityObject, object_list);
@@ -180,7 +177,7 @@ int main() {
     while(true){
     	wait_ms(10000);
     	mbed_client.test_update_register();
-    	//printf("Register update \r\n");
+    	printf("Register update \r\n");
     }
     mbed_client.test_unregister();
 }

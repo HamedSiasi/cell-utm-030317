@@ -1,3 +1,17 @@
+/*
+ *
+ * Copyright (C) u-blox Melbourn Ltd
+ * u-blox Melbourn Ltd, Melbourn, UK
+ *
+ * All rights reserved.
+ *
+ * This source file is the sole property of u-blox Melbourn Ltd.
+ * Reproduction or utilisation of this source in whole or part is
+ * forbidden without the written consent of u-blox Melbourn Ltd.
+ * hamed.siasi@u-blox.com
+ *
+ */
+
 #pragma once 
 
 #include "mbed.h"
@@ -6,7 +20,7 @@
 #include "Pipe.h"
 #include "SerialPipe.h"
 
-#ifdef TARGET_UBLOX_C027 
+#ifdef TARGET_UBLOX_C027
  // you can change this is you like to use a shield even on the C027
  #define MDM_IF(onboard,shield) onboard
 #else
@@ -32,9 +46,9 @@ public:
     // Types 
     // ----------------------------------------------------------------
     //! MT Device Types 
-    typedef enum { DEV_UNKNOWN, 
-                   DEV_SARA_G35, DEV_LISA_U2, DEV_LISA_U2_03S, DEV_LISA_C2, 
-                   DEV_SARA_U2, DEV_LEON_G2, DEV_TOBY_L2, DEV_MPCI_L2 } Dev; 
+    typedef enum { DEV_UNKNOWN,
+                   DEV_SARA_G35, DEV_LISA_U2, DEV_LISA_U2_03S, DEV_LISA_C2,
+                   DEV_SARA_U2, DEV_LEON_G2, DEV_TOBY_L2, DEV_MPCI_L2 } Dev;
     //! SIM Status
     typedef enum { SIM_UNKNOWN, SIM_MISSING, SIM_PIN, SIM_PUK, SIM_READY, WRONG_PIN } Sim;
     //! SIM Status
@@ -57,7 +71,7 @@ public:
     //! Registration Status
     typedef enum { REG_UNKNOWN, REG_DENIED, REG_NONE, REG_HOME, REG_ROAMING } Reg; 
     //! Access Technology
-    typedef enum { ACT_UNKNOWN, ACT_GSM, ACT_EDGE, ACT_UTRAN, ACT_CDMA, ACT_LTE } AcT; 
+    typedef enum { ACT_UNKNOWN, ACT_GSM, ACT_EDGE, ACT_UTRAN, ACT_CDMA, ACT_LTE } AcT;
     //! Network Status
     typedef struct { 
         Reg csd;        //!< CSD Registration Status (Circuit Switched Data)
@@ -90,7 +104,7 @@ public:
        int verticalAcc;     //!< Vertical accuracy, in meters^2
        CellSensType sensor;      //!< Sensor used for last calculation
        int svUsed;          //!< number of satellite used
-   }CellLocData;    
+   }CellLocData;
     //! An IP v4 address
     typedef uint32_t IP;
     #define NOIP ((MDMParser::IP)0) //!< No IP address
@@ -105,7 +119,7 @@ public:
                             (((IP)(c))<< 8) | \
                             (((IP)(d))<< 0))
 
-    
+
     // ----------------------------------------------------------------
     // Device 
     // ----------------------------------------------------------------
@@ -120,24 +134,24 @@ public:
         \param auth is the authentication mode (CHAP,PAP,NONE or DETECT)
         \return true if successful, false otherwise
     */
-    bool connect(const char* simpin = NULL, 
-            const char* apn = NULL, const char* username = NULL, 
+    bool connect(const char* simpin = NULL,
+            const char* apn = NULL, const char* username = NULL,
             const char* password = NULL, Auth auth = AUTH_DETECT,
-            PinName pn MDM_IF( = MDMPWRON, = D4));    
+            PinName pn MDM_IF( = MDMPWRON, = D4));
 
-    /** register (Attach) the MT to the GPRS service. 
+    /** register (Attach) the MT to the GPRS service.
         \param simpin a optional pin of the SIM card
         \param status an optional struture to with device information 
         \return true if successful, false otherwise
     */
-    virtual bool init(const char* simpin = NULL, DevStatus* status = NULL, 
+    virtual bool init(const char* simpin = NULL, DevStatus* status = NULL,
                 PinName pn MDM_IF( = MDMPWRON, = D4));
 
     /** get the current device status
-        \param strocture holding the device information. 
+        \param strocture holding the device information.
     */
     void getDevStatus(MDMParser::DevStatus* dev) { memcpy(dev, &_dev, sizeof(DevStatus)); }
-    
+
     /** register to the network 
         \param status an optional structure to with network information 
         \param timeout_ms -1 blocking, else non blocking timeout in ms
@@ -183,7 +197,7 @@ public:
     MDMParser::IP gethostbyname(const char* host);
     
     /** get the current assigned IP address
-        \return the ip that is assigned 
+        \return the ip that is assigned
     */
     MDMParser::IP getIpAddress(void) { return _ip; }
 
@@ -282,48 +296,48 @@ public:
     // ----------------------------------------------------------------
     // HTTP
     // ----------------------------------------------------------------
-    
-    //! Type of HTTP Operational Codes (reference to HTTP control +UHTTP) 
+
+    //! Type of HTTP Operational Codes (reference to HTTP control +UHTTP)
     typedef enum { HTTP_IP_ADDRESS, HTTP_SERVER_NAME, HTTP_USER_NAME, HTTP_PASSWORD, \
                    HTTP_AUTH_TYPE, HTTP_SERVER_PORT, HTTP_SECURE } HttpOpCode;
-    
+
     //! Type of HTTP Commands (reference to HTTP command +UHTTPC)
     typedef enum { HTTP_HEAD, HTTP_GET, HTTP_DELETE, HTTP_PUT, \
                    HTTP_POST_FILE, HTTP_POST_DATA } HttpCmd;
-    
+
     //! HTTP Profile error return codes
     #define HTTP_PROF_ERROR -1
-    
+
     /** find HTTP profile
         \return true if successfully, false otherwise
     */
     int httpFindProfile();
-    
+
     /** get the number of bytes pending for reading for this HTTP profile
         \param profile the HTTP profile handle
         \param timeout_ms -1 blocking, else non blocking timeout in ms
-        \return 0 if successful or SOCKET_ERROR on failure 
+        \return 0 if successful or SOCKET_ERROR on failure
     */
     bool httpSetBlocking(int profile, int timeout_ms);
-    
+
     /** set the HTTP profile for commands management
         \param profile the HTTP profile handle
         \return true if successfully, false otherwise
     */
     bool httpSetProfileForCmdMng(int profile);
-    
+
     /** free the HTTP profile
         \param profile the HTTP profile handle
         \return true if successfully, false otherwise
     */
     bool httpFreeProfile(int profile);
-    
+
     /** reset HTTP profile
         \param httpProfile the HTTP profile to be reset
         \return true if successfully, false otherwise
     */
     bool httpResetProfile(int httpProfile);
-    
+
     /** set HTTP parameters
         \param httpProfile the HTTP profile identifier
         \param httpOpCode the HTTP operation code
@@ -331,13 +345,13 @@ public:
         \return true if successfully, false otherwise
     */
     bool httpSetPar(int httpProfile, HttpOpCode httpOpCode, const char * httpInPar);
-    
+
     /** HTTP commands management
         \param httpProfile the HTTP profile identifier
         \param httpCmdCode the HTTP command code
         \param httpPath the path of HTTP server resource
         \param httpOut the filename where the HTTP server response will be stored
-        \param httpIn the input data (filename or string) to be sent 
+        \param httpIn the input data (filename or string) to be sent
                       to the HTTP server with the command request
         \param httpContentType the HTTP Content-Type identifier
         \param httpCustomPar the parameter for an user defined HTTP Content-Type
@@ -348,13 +362,13 @@ public:
     bool httpCommand(int httpProfile, HttpCmd httpCmdCode, const char* httpPath, \
                      const char* httpOut, const char* httpIn, int httpContentType, \
                      const char* httpCustomPar, char* buf, int len);
-    
+
     /** get HTTP commands
         \param httpCmdCode the HTTP command code (reference also the enum format)
         \return HTTP command in string format
     */
     const char* getHTTPcmd(int httpCmdCode);
-    
+
     // ----------------------------------------------------------------
     // SMS Short Message Service
     // ----------------------------------------------------------------
@@ -430,19 +444,19 @@ public:
     
     /** Read a file from the local file system
         (the file size is greater than MAX_SIZE bytes)
-        \param filename the name of the file 
-        \param buf a buffer to hold the data 
+        \param filename the name of the file
+        \param buf a buffer to hold the data
         \param len the size to read
         \return the number of bytes read
     */
     int readFileNew(const char* filename, char* buf, int len);
-    
+
     /** Retrieve information about the dimension of a file from the local FFS
         \param filename the name of the file
-        \return the file dimension in number of bytes 
+        \return the file dimension in number of bytes
     */
     int infoFile(const char* filename);
-    
+
     // ----------------------------------------------------------------
     // CellLocate
     // ----------------------------------------------------------------
@@ -472,14 +486,14 @@ public:
      */
     int cellLocUnsol(int mode);
 
-    /**  Configures CellLocate location sensor 
+    /**  Configures CellLocate location sensor
          \scanMode Network scan mode: 0 normal, 1 deep scan
      */
     int cellLocConfig(int scanMode);
 
-    /** Request CellLocate 
+    /** Request CellLocate
         This function is not blocking, the result has to be retrived using cellLocGet
-         \sensor        Sensor selection: 
+         \sensor        Sensor selection:
          \timeout       Timeout period in seconds (1 - 999)
          \accuracy      Target accuracy in meters (1 - 999999)
          \type
@@ -493,16 +507,16 @@ public:
         \return 1 if data has been retrived and copied, 0 otherwise
     */
     int cellLocGetData(CellLocData *data, int index =0);
-    
-    /** Get number of position records received       
+
+    /** Get number of position records received
         \return number of position received
     */
     int cellLocGetRes();
-    /** Get expected number of position to be received       
+    /** Get expected number of position to be received
         \return number of expected position to be received
     */
     int cellLocGetExpRes();
-    
+
     // ----------------------------------------------------------------
     // DEBUG/DUMP status to standard out (printf)
     // ----------------------------------------------------------------
@@ -628,8 +642,7 @@ public:
     /** Wait for a final respons
         \param cb the optional callback function
         \param param the optional callback function parameter
-        \param timeout_ms the timeout to wait (See Estimated command 
-               response time of AT manual)
+        \param timeout_ms the timeout to wait (See Estimated command response time of AT manual)
     */
     int waitFinalResp(_CALLBACKPTR cb = NULL, 
                       void* param = NULL, 
@@ -714,12 +727,19 @@ protected:
     static int _cbCGDCONT(int type, const char* buf, int len, int* cid);
     static int _cbUDOPN(int type, const char* buf, int len, char* mccmnc);
     // sockets
-    static int _cbCMIP(int type, const char* buf, int len, IP* ip);
-    static int _cbUPSND(int type, const char* buf, int len, int* act);
-    static int _cbUPSND(int type, const char* buf, int len, IP* ip);
+    static int _cbCMIP(int type,   const char* buf, int len, IP* ip);
+    static int _cbUPSND(int type,  const char* buf, int len, int* act);
+    static int _cbUPSND(int type,  const char* buf, int len, IP* ip);
     static int _cbUDNSRN(int type, const char* buf, int len, IP* ip);
-    static int _cbUSOCR(int type, const char* buf, int len, int* handle);
-    static int _cbUSORD(int type, const char* buf, int len, char* out);
+    static int _cbUSOCR(int type,  const char* buf, int len, int* handle);
+    static int _cbUSORD(int type,  const char* buf, int len, char* out);
+    static int _cbCGPAddr(int type,const char* buf, int len, bool* connected); // Rob
+    static void tohex(unsigned char * in, size_t insz, char * out, size_t outsz); //hamed
+
+
+
+
+
     typedef struct { char* buf; IP ip; int port; } USORFparam;
     static int _cbUSORF(int type, const char* buf, int len, USORFparam* param);
     typedef struct { char* buf; char* num; } CMGRparam;
@@ -798,7 +818,7 @@ public:
               int txSize    = 128 );
     //! Destructor          
     virtual ~MDMSerial(void);
-     
+
     /** Get a line from the physical interface. 
         \param buf the buffer to store it
         \param buf size of the buffer

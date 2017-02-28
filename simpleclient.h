@@ -88,7 +88,7 @@ public:
      */
     void create_interface(const char *server_address, void *handler=NULL) {
     	_server_address = server_address;
-    	uint16_t port = 41000; // 9005 Newburry OpenLAB
+    	uint16_t port = 9005; //41000; // 9005 Newburry OpenLAB
 
     	_interface = M2MInterfaceFactory::create_interface(*this,
                                                       	  MBED_ENDPOINT_NAME,       // endpoint name string

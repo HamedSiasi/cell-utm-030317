@@ -16,7 +16,7 @@
 
 #include "mbed.h"
 #include <stdarg.h>
-
+#include <algorithm>
 #include "Pipe.h"
 #include "SerialPipe.h"
 
@@ -735,6 +735,7 @@ protected:
     static int _cbUSORD(int type,  const char* buf, int len, char* out);
     static int _cbCGPAddr(int type,const char* buf, int len, bool* connected); // Rob
     static void tohex(unsigned char * in, size_t insz, char * out, size_t outsz); //hamed
+    static void hextostr(unsigned char * in, size_t insz, char * output, size_t outsz); //hamed
 
 
 

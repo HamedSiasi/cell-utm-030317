@@ -28,8 +28,8 @@ __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 //#define PORT 9005
 
 //ZELITRON
-//#define HOST "195.46.10.19"
-//#define PORT 9005
+#define HOST "195.46.10.19"
+#define PORT 9005
 
 //#define HOST "ciot.it-sgn.u-blox.com"
 //#define PORT 5683
@@ -44,8 +44,8 @@ __attribute__((section("AHBSRAM0"))) static MDMSerial *pMdm = NULL;
 //#define PORT 5683
 
 //Neul ecco server
-#define HOST "120.16.45.6"
-#define PORT 41000
+//#define HOST "120.16.45.6"
+//#define PORT 41000
 
 
 
@@ -205,7 +205,7 @@ class CellNet : public NetworkStack{
 	    virtual int socket_sendto(nsapi_socket_t handle, const SocketAddress &address, const void *data, unsigned size)
 	    {
 	    	int ret;
-	    	printf("\n\n\n\r ---> socket_sendto handle:(%d) size:(%d)\r\n", (int)handle, (int)size);
+	    	//printf("\n\n\n\r ---> socket_sendto handle:(%d) size:(%d)\r\n", (int)handle, (int)size);
 
 	    	ret = (int) (pMdm->socketSendTo( (int)0,(MDMParser::IP)HOST,PORT,reinterpret_cast<const char*>(data),(int)size ) );
 	    	return ret;
@@ -213,7 +213,7 @@ class CellNet : public NetworkStack{
 
 	    virtual int socket_recvfrom(nsapi_socket_t handle, SocketAddress *address, void *buffer, unsigned size)
 	    {
-	    	printf("\n\n\n\r ---> socket_recvfrom handle:(%d) size:(%d) \r\n", (int)handle, (int)size);
+	    	//printf("\n\n\n\r ---> socket_recvfrom handle:(%d) size:(%d) \r\n", (int)handle, (int)size);
 	    	MDMParser::IP ip;
 	    	int port;
 	    	return pMdm->socketRecvFrom( (int)0, &ip, &port, (char*)buffer, (int)size );

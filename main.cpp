@@ -24,9 +24,9 @@
 //#define MBED_SERVER_ADDRESS  "coap://169.45.82.18:5684"            // ARM LwM2M server
 //#define MBED_SERVER_ADDRESS  "coap://151.9.34.90:5683"             // Sgonico CoAP echo server
 //#define MBED_SERVER_ADDRESS  "coap://151.9.34.99:8080"             // Junaid Ashraf
-//#define MBED_SERVER_ADDRESS    "coap://195.46.10.19:9005"            // ZELITRON LwM2M server  Newbury OpenLAB
+#define MBED_SERVER_ADDRESS    "coap://195.46.10.19:9005"            // ZELITRON LwM2M server  Newbury OpenLAB
 //#define MBED_SERVER_ADDRESS  "coap://192.168.5.80:9005"            // ZELITRON Server VIP (Load balancer )
-#define MBED_SERVER_ADDRESS    "coap://120.16.45.6:41000"            // Neul ecco server
+//#define MBED_SERVER_ADDRESS    "coap://120.16.45.6:41000"            // Neul ecco server
 
 
 
@@ -162,20 +162,24 @@ int main() {
     M2MSecurity* securityObject  = mbed_client.create_register_object();
     M2MDevice*   device_object   = mbed_client.create_device_object();
 
+
     // OBJECTS LIST:
     M2MObjectList object_list;
     TempResource temp_resource;
     //ServerObj    server_resource;
 
+
     object_list.push_back(device_object);                     // obj 3
     object_list.push_back(temp_resource.get_object());        // obj 3303
     //object_list.push_back(server_resource.get_object());
+
 
     mbed_client.set_register_object(securityObject);
     mbed_client.test_register(securityObject, object_list);
 
     while(true){
-    	wait_ms(10000);
+    	//wait_ms(10000); // 10sec
+    	wait_ms(100000);  // 100sec
     	mbed_client.test_update_register();
     	printf("Register update \r\n");
     }

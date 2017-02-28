@@ -199,7 +199,7 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb  /* = NULL*/,
                 else if ((sscanf(cmd, "NSONMI: %d,%d", &a, &b) == 2))
                 {
                     int socket = _findSocket(a);
-                    TRACE("Socket %d: handle %d has %d bytes pending ############################################################\r\n", socket, a, b);
+                    TRACE("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
                     if (socket != SOCKET_ERROR)
                         _sockets[socket].pending = b;
                     // +UUSORF: <socket>,<length>
@@ -430,7 +430,7 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
     memset(&_dev, 0, sizeof(_dev));
     if (pn != NC) {
         INFO("Modem::wakeup ...\r\n");
-        wait_ms(1000);
+        wait_ms(3000);
 
         DigitalOut pin(pn, 1);
         while (i--)
@@ -463,19 +463,19 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
     INFO("Modem::init\r\n");
     sendFormated("AT\r\n");
     waitFinalResp();
-    wait_ms(5000);
+    wait_ms(1000);
 
     sendFormated("AT\r\n");
     waitFinalResp();
-    wait_ms(5000);
+    wait_ms(1000);
 
     sendFormated("AT+NBAND?\r\n");
     waitFinalResp();
-    wait_ms(10000);
+    wait_ms(2000);
 
     sendFormated("AT+CMEE=1\r\n");
     waitFinalResp();
-    wait_ms(10000);
+    wait_ms(2000);
 
     INFO("Modem::Manufacturing revision \r\n");
     sendFormated("AT+CGMR\r\n");
@@ -487,15 +487,15 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
     wait_ms(10000);
 
     INFO("Modem::RegisterF \r\n");
-    //sendFormated("AT+COPS=1,2,\"23591\"\r\n");     // NEWBURY
-    sendFormated("AT+COPS=1,2,\"46001\"\r\n");   // NEUL
+    sendFormated("AT+COPS=1,2,\"23591\"\r\n");     // NEWBURY
+    //sendFormated("AT+COPS=1,2,\"46001\"\r\n");   // NEUL
     waitFinalResp();
-    wait_ms(40000);
+    wait_ms(42000);
 
     INFO("Modem::Register status \r\n");
     sendFormated("AT+CEREG?\r\n");
     waitFinalResp();
-    wait_ms(10000);
+    wait_ms(1000);
 
     bool ok = false;
     INFO("Modem:: address \r\n");
@@ -1050,8 +1050,9 @@ int MDMParser::_cbUSOCR(int type, const char* buf, int len, int* handle)
 
 int MDMParser::socketSocket(IpProtocol ipproto, int port)
 {
-    int socket;
-    wait_ms(10000);
+	TRACE("socketSocket\r\n");
+    int socket=0;
+    wait_ms(5000);
     LOCK();
 
     sendFormated("AT+NSOCR=DGRAM,17,%d\r\n", port);
@@ -1128,9 +1129,11 @@ bool  MDMParser::socketClose(int socket)
     if (ISSOCKET(socket) && _sockets[socket].connected) {
         TRACE("socketClose(%d)\r\n", socket);
 
+
         //CLOSE SOCKET
         //sendFormated("AT+USOCL=%d\r\n", _sockets[socket].handle);
         sendFormated("AT+NSOCL=%d\r\n", _sockets[socket].handle);
+
 
         if (RESP_OK == waitFinalResp()) {
             _sockets[socket].connected = false;
@@ -1175,9 +1178,12 @@ int MDMParser::socketSend(int socket, const char * buf, int len)
             sendFormated("AT+USOWR=%d,%d\r\n",_sockets[socket].handle,blk);
             if (RESP_PROMPT == waitFinalResp()) {
                 wait_ms(50);
-                send(buf, blk);
-                if (RESP_OK == waitFinalResp()) 
-                    ok = true;
+                //send(buf, blk);
+                if (RESP_OK == waitFinalResp()) {
+                	wait_ms(50);
+                	waitFinalResp();
+                	ok = true;
+                }
             }
         }
         UNLOCK();
@@ -1205,6 +1211,26 @@ void MDMParser::tohex(unsigned char * in, size_t insz, char * pout, size_t outsz
 	*pout = 0;
 }
 
+void MDMParser::hextostr(unsigned char * in, size_t insz, char * output, size_t outsz)
+{
+    const char* const hex = "0123456789ABCDEF";
+    size_t len = 2*insz;
+    int k=0;
+
+    for (size_t i = 0; i < len; i += 2)
+    {
+        char a,b;
+        a = in[i];
+        const char* p = std::lower_bound(hex, hex + 16, a);
+        //if (*p != a) return NULL;
+        b = in[i + 1];
+        const char* q = std::lower_bound(hex, hex + 16, b);
+        //if (*q != b) return NULL;
+        output[k++] = ((p - hex) << 4) | (q - hex);
+    }
+    //output[k] = '\0';
+}
+
 int MDMParser::socketSendTo(int socket, IP ip, int port, const char * buf, int len)
 {
     int cnt = len;
@@ -1217,23 +1243,22 @@ int MDMParser::socketSendTo(int socket, IP ip, int port, const char * buf, int l
         }
         bool ok = false;
         LOCK();
+        TRACE("<---- (%d) \"%*s\"\r\n", len, len, buf);
+
         char *str = (char*)malloc(3*len);
         tohex( (unsigned char *)buf, (size_t)len,  (char *)str,  3*len);
 
-        //sendFormated("AT+NSOST=0,195.46.10.19,%d,%d,%s\r\n", port,blk,str);    // Newbury OpenLAB
-        sendFormated("AT+NSOST=0,120.16.45.6,%d,%d,%s\r\n", port,blk,str);       // Neul ecco server
-        if (RESP_PROMPT == waitFinalResp())
-        {
-        	wait_ms(50);
-        	if (RESP_OK == waitFinalResp())
-        	{
-        		ok = true;
-        	}
-        }
-        UNLOCK();
+        sendFormated("AT+NSOST=0,195.46.10.19,%d,%d,%s\r\n", port,blk,str);      // Newbury OpenLAB
+        //sendFormated("AT+NSOST=0,120.16.45.6,%d,%d,%s\r\n", port,blk,str);       // Neul ecco server
 
-        if (!ok)
-        {
+        wait_ms(50);
+        waitFinalResp();
+        wait_ms(50);
+        waitFinalResp();
+        ok = true;
+
+        UNLOCK();
+        if (!ok){
             return SOCKET_ERROR;
         }
         buf += blk;
@@ -1257,8 +1282,6 @@ int MDMParser::socketReadable(int socket)
     return pending;
 }
 
-
-
 int MDMParser::_cbUSORD(int type, const char* buf, int len, char* out)
 {
 	//HOW MUCH DATA I HAVE TO READ
@@ -1271,8 +1294,6 @@ int MDMParser::_cbUSORD(int type, const char* buf, int len, char* out)
     }
     return WAIT;
 }
-
-
 
 int MDMParser::socketRecv(int socket, char* buf, int len)
 {
@@ -1324,81 +1345,75 @@ int MDMParser::socketRecv(int socket, char* buf, int len)
 
 int MDMParser::_cbUSORF(int type, const char* buf, int len, USORFparam* param)
 {
-    if ((type == TYPE_PLUS) && param) {
-        int sz, sk, p, a,b,c,d;
-        int r = sscanf(buf, "\r\n+NSONMI: %d,\"" IPSTR "\",%d,%d,",&sk,&a,&b,&c,&d,&p,&sz);
+	int sz, sk, p, a,b,c,d;
+	int r = sscanf(buf, "\r\n%d,%d.%d.%d.%d,%d,%d,", &sk,&a,&b,&c,&d,&p,&sz);
+	if (r == 7)
+	{
+		char *hexString  = (char*)malloc(2*sz);
+		char *charString = (char*)malloc(sz);
 
-        if ((r == 7) && (buf[len-sz-2] == '\"') && (buf[len-1] == '\"')) {
-            memcpy(param->buf, &buf[len-1-sz], sz);
-            param->ip = IPADR(a,b,c,d);
-            param->port = p;
-        }
-    }
+		memcpy(hexString, &buf[len-4-(2*sz)] ,2*sz);
+		hextostr (  (unsigned char *)hexString, 2*sz, charString, sz);
+
+		memcpy(param->buf, charString, sz);
+
+		free(hexString);
+		free(charString);
+
+		param->ip   = IPADR(a,b,c,d);
+		param->port = p;
+	}
     return WAIT;
 }
 
 int MDMParser::socketRecvFrom(int socket, IP* ip, int* port, char* buf, int len)
 {
     int cnt = 0;
-    TRACE("socketRecvFrom(%d,,%d)\r\n", socket, len);
 #ifdef MDM_DEBUG
     memset(buf, '\0', len);
 #endif
-
-
-
     Timer timer;
     timer.start();
-    while (len) // 1152?
+    while (len) //1152
     {
     	int blk = MAX_SIZE; //128
-    	if (len < blk)
-    	{
+    	if (len < blk){
     		blk = len;
     	}
     	bool ok = false;
     	LOCK();
-    	if (_sockets[socket].pending < blk)
-    	{
+    	if (_sockets[socket].pending < blk){
     		blk = _sockets[socket].pending;
     	}
-    	if (blk > 0)
-    	{
-    		// +NSONMI:socket,len received
-
+    	if (blk > 0){
     		sendFormated("AT+NSORF=0,%d\r\n", blk);
     		USORFparam param;
     		param.buf = buf;
-    		if (RESP_OK == waitFinalResp(_cbUSORF, &param))
-    		{
-    			TRACE("socketRecv: ERROR\r\n");
+    		if (RESP_OK == waitFinalResp(_cbUSORF, &param)){
     			_sockets[socket].pending -= blk;
+    			*ip = param.ip;
+    			*port = param.port;
     			len -= blk;
     			cnt += blk;
     			buf += blk;
     			len = 0;
     			ok = true;
     		}
-    	}
-    	else if (!TIMEOUT(timer, _sockets[socket].timeout_ms))
-    	{
-    			ok = (WAIT == waitFinalResp(NULL,NULL,0)); // wait for URCs
-    	}
-    	else
-    	{
-    			len = 0;
-    			ok = true;
+    	}else if (!TIMEOUT(timer, _sockets[socket].timeout_ms)){
+    		ok = (WAIT == waitFinalResp(NULL,NULL,0)); // wait for URCs
+    	}else{
+    		len = 0;
+    		ok = true;
     	}
     	UNLOCK();
-        if (!ok)
-        {
+        if (!ok){
             TRACE("socketRecv: ERROR\r\n");
             return SOCKET_ERROR;
         }
-    } //while(len)
-
+    }
     timer.stop();
     timer.reset();
+
     TRACE("socketRecv: %d \"%*s\"\r\n", cnt, cnt, buf-cnt);
     return cnt;
 }

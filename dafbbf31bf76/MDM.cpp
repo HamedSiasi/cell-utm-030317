@@ -201,8 +201,9 @@ int MDMParser::waitFinalResp(_CALLBACKPTR cb  /* = NULL*/,
                     int socket = _findSocket(a);
                     TRACE("Socket %d: handle %d has %d bytes pending\r\n", socket, a, b);
                     if (socket != SOCKET_ERROR)
-                        _sockets[socket].pending = b;
-                    // +UUSORF: <socket>,<length>
+                    {
+                    	_sockets[socket].pending = b;
+                    }
                 }
 
                 else if ((sscanf(cmd, "UUSORF: %d,%d", &a, &b) == 2))
@@ -496,6 +497,7 @@ bool MDMParser::init(const char* simpin, DevStatus* status, PinName pn)
     sendFormated("AT+CEREG?\r\n");
     waitFinalResp();
     wait_ms(1000);
+
 
     bool ok = false;
     INFO("Modem:: address \r\n");

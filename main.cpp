@@ -149,7 +149,6 @@ private:
 
 
 int main() {
-
     NetworkInterface *network_interface = 0;
     wait_ms(3000);
     CellInterface cell;
@@ -178,8 +177,11 @@ int main() {
     mbed_client.test_register(securityObject, object_list);
 
     while(true){
-    	//wait_ms(10000); // 10sec
-    	wait_ms(100000);  // 100sec
+
+    	//wait_ms(1000); // 10sec
+    	wait_ms(300001);  // 300sec
+    	//wait_ms(600000);  // 300sec
+
     	mbed_client.test_update_register();
     	printf("Register update \r\n");
     }
